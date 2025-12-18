@@ -1,11 +1,11 @@
 * { box-sizing: border-box; }
 body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f7f7f9; color: #222; }
 header { background: linear-gradient(135deg, #1f6feb 0%, #1a5bc9 100%); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-header .container { display: flex; align-items: stretch; justify-content: flex-start; padding: 0; gap: 0; flex-wrap: nowrap; width: 100%; }
+header .container { display: flex; align-items: stretch; justify-content: flex-start; padding: 0; gap: 0; flex-wrap: wrap; width: 100%; }
 header h1 { margin: 0; font-size: 1.9rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.5px; padding: 1rem 2rem; display: flex; align-items: center; background: rgba(0,0,0,0.1); border-right: 2px solid rgba(255,255,255,0.2); }
 header h1 a { color: white; text-decoration: none; transition: opacity 0.3s; }
 header h1 a:hover { opacity: 0.9; }
-header nav { display: flex; align-items: stretch; gap: 0; flex: 1; flex-wrap: nowrap; font-size: 1.15rem; }
+header nav { display: flex; align-items: stretch; gap: 0; flex: 1; flex-wrap: wrap; font-size: 1.15rem; min-width: 0; }
 header nav a { color: white; text-decoration: none; padding: 1rem 1.5rem; border-radius: 0; transition: all 0.3s ease; font-weight: 500; display: flex; align-items: center; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1); }
 header nav a:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
 header nav a:last-child { border-right: none; }
@@ -17,23 +17,23 @@ header nav a:last-child { border-right: none; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 .card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
 .table { width: 100%; border-collapse: collapse; }
-.table th, .table td { border-bottom: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+.table th, .table td { border-bottom: 1px solid #ddd; padding: 0.5rem; text-align: left; font-size: 0.95rem; }
 .price { font-size: 1.2rem; font-weight: 600; }
 .meta { color: #555; }
 .form label { display: block; margin-bottom: 0.5rem; }
-.form input, .form textarea, .form select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; }
+.form input, .form textarea, .form select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
 .form textarea { min-height: 80px; }
-button, .btn { background: #1f6feb; color: white; border: none; padding: 0.5rem 0.9rem; border-radius: 6px; cursor: pointer; }
+button, .btn { background: #1f6feb; color: white; border: none; padding: 0.5rem 0.9rem; border-radius: 6px; cursor: pointer; font-size: 1rem; }
 button.secondary, .btn.secondary { background: #777; }
 button.danger { background: #c62828; }
-.actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; }
+.actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
 .flash { max-width: 960px; margin: 0.5rem auto; }
 .flash-item { padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.5rem; }
 .flash-item.success { background: #e6ffed; color: #0a5; }
 .flash-item.error { background: #ffecec; color: #a00; }
 .product-image { width: 100%; height: 200px; object-fit: cover; border-radius: 6px; margin-bottom: 0.5rem; }
 .product-image-detail { width: 100%; max-width: 400px; height: auto; border-radius: 8px; margin-bottom: 1rem; }
-.admin-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.admin-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; }
 .admin-header h2 { margin: 0; }
 .user-greeting { color: #555; font-size: 0.95rem; margin: 0.5rem 0; }
 .auth-container { max-width: 400px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -47,3 +47,51 @@ button.danger { background: #c62828; }
 .status.failed { background: #ffecec; color: #a00; }
 .note { color: #666; font-size: 0.9rem; }
 footer { margin-top: 2rem; padding: 1rem; background: #f0f3f6; color: #333; }
+
+/* Mobile Responsive Design */
+@media (max-width: 1024px) {
+  header h1 { font-size: 1.6rem; padding: 0.8rem 1.5rem; }
+  header nav { font-size: 1rem; }
+  header nav a { padding: 0.8rem 1rem; }
+  .user-info { padding: 0.8rem 1rem; font-size: 0.95rem; }
+  .logout-link { padding: 0.8rem 1rem; font-size: 1rem; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  header .container { flex-wrap: wrap; }
+  header h1 { font-size: 1.4rem; padding: 0.7rem 1rem; border-right: none; width: 100%; }
+  header nav { font-size: 0.95rem; width: 100%; order: 3; }
+  header nav a { padding: 0.7rem 0.8rem; flex: 1; border-right: 1px solid rgba(255,255,255,0.1); }
+  header nav a:last-child { border-right: none; }
+  .user-info { padding: 0.7rem 0.8rem; font-size: 0.9rem; }
+  .logout-link { padding: 0.7rem 0.8rem; font-size: 0.95rem; margin-left: 0; }
+  .container { padding: 0.75rem; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.75rem; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .card { padding: 0.75rem; }
+  .table th, .table td { padding: 0.4rem; font-size: 0.85rem; }
+  .auth-container { max-width: 90%; padding: 1.5rem; margin: 1rem auto; }
+  .product-image-detail { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  header h1 { font-size: 1.1rem; padding: 0.6rem 0.75rem; }
+  header nav { font-size: 0.85rem; }
+  header nav a { padding: 0.6rem 0.5rem; }
+  .user-info { padding: 0.6rem 0.5rem; font-size: 0.8rem; }
+  .logout-link { padding: 0.6rem 0.5rem; font-size: 0.85rem; }
+  .container { padding: 0.5rem; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .card { padding: 0.5rem; }
+  .table { font-size: 0.8rem; }
+  .table th, .table td { padding: 0.3rem; }
+  .price { font-size: 1rem; }
+  .form input, .form textarea, .form select { padding: 0.4rem; font-size: 0.9rem; }
+  .auth-container { max-width: 95%; padding: 1rem; margin: 0.75rem auto; }
+  .auth-container h2 { font-size: 1.3rem; }
+  button, .btn { padding: 0.4rem 0.7rem; font-size: 0.9rem; }
+  .actions { gap: 0.3rem; }
+}
