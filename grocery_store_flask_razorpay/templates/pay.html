@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Payment</h2>
+<p>Order #{{ order.id }} — Total: ₹{{ '%.2f'|format(order.total_amount) }}</p>
+<button id="rzp-button">Pay with Razorpay</button>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const options = {
+    key: '{{ env_key_id }}',
+    amount: '{{ (order.total_amount*100)|int }}',
+    currency: 'INR',
+    name: 'Organic Gut Point',
+    description: 'Order #{{ order.id }}',
+    order_id: '{{ order.razorpay_order_id }}',
+    prefill: { name: '{{ order.customer_name }}', email: '{{ order.email }}', contact: '{{ order.phone }}' },
+    notes: { local_order_id: '{{ order.id }}' },
+    theme: { color: '#1f6feb' },
+    handler: function (resp) {
+      fetch('{{ url_for('razorpay_callback') }}', {
+        method: 'POST', headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(resp)
+      }).then(function(){ window.location = '{{ url_for('order_success', order_id=order.id) }}'; });
+    }
+  };
+  const rzp = new Razorpay(options);
+  document.getElementById('rzp-button').onclick = function(e){ rzp.open(); e.preventDefault(); }
+</script>
+{% endblock %}

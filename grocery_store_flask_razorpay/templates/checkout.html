@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Checkout</h2>
+<form method="post" class="form">
+  <div class="grid-2">
+    <label>Name<input name="name" required></label>
+    <label>Email<input type="email" name="email" required></label>
+    <label>Phone<input name="phone" required></label>
+    <label>Address<textarea name="address" required></textarea></label>
+    <label>City<input name="city" required></label>
+    <label>Pincode<input name="pincode" required></label>
+  </div>
+  <p><strong>Order Total:</strong> ₹{{ '%.2f'|format(total) }}</p>
+  <button type="submit">Continue to Payment</button>
+</form>
+{% endblock %}

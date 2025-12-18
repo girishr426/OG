@@ -1,0 +1,25 @@
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f7f7f9; color: #222; }
+header { background: #1f6feb; color: white; }
+header .container { display: flex; align-items: center; justify-content: space-between; padding: 1rem; }
+header a { color: #fff; text-decoration: none; margin-left: 1rem; }
+.container { max-width: 960px; margin: 0 auto; padding: 1rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { border-bottom: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+.price { font-size: 1.2rem; font-weight: 600; }
+.meta { color: #555; }
+.form label { display: block; margin-bottom: 0.5rem; }
+.form input, .form textarea, .form select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; }
+.form textarea { min-height: 80px; }
+button, .btn { background: #1f6feb; color: white; border: none; padding: 0.5rem 0.9rem; border-radius: 6px; cursor: pointer; }
+button.secondary, .btn.secondary { background: #777; }
+button.danger { background: #c62828; }
+.actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; }
+.flash { max-width: 960px; margin: 0.5rem auto; }
+.flash-item { padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.5rem; }
+.flash-item.success { background: #e6ffed; color: #0a5; }
+.flash-item.error { background: #ffecec; color: #a00; }
+footer { margin-top: 2rem; padding: 1rem; background: #f0f3f6; color: #333; }

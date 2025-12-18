@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Manage Products</h2>
+<a class="btn" href="{{ url_for('admin_product_new') }}">+ Add Product</a>
+<table class="table">
+  <tr><th>Name</th><th>Price</th><th>Stock</th><th>Est. Days</th><th>Est. Date</th><th>Actions</th></tr>
+  {% for p in products %}
+  <tr>
+    <td>{{ p.name }}</td>
+    <td>₹{{ '%.2f'|format(p.price) }}</td>
+    <td>{{ p.stock }}</td>
+    <td>{{ p.estimated_delivery_days or '-' }}</td>
+    <td>{{ p.estimated_delivery_date or '-' }}</td>
+    <td>
+      <a href="{{ url_for('admin_product_edit', pid=p.id) }}">Edit</a>
+      <form action="{{ url_for('admin_product_delete', pid=p.id) }}" method="post" style="display:inline" onsubmit="return confirm('Delete this product?')">
+        <button class="danger">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

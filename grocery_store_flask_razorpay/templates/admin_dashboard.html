@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<div class="stats">
+  <div class="card"><h3>Products</h3><p>{{ stats.products }}</p></div>
+  <div class="card"><h3>Orders</h3><p>{{ stats.orders }}</p></div>
+  <div class="card"><h3>Revenue</h3><p>₹{{ '%.2f'|format(stats.revenue or 0) }}</p></div>
+</div>
+<div class="actions">
+  <a class="btn" href="{{ url_for('admin_products') }}">Manage Products</a>
+  <a class="btn" href="{{ url_for('admin_orders') }}">Manage Orders</a>
+  <a class="btn secondary" href="{{ url_for('admin_logout') }}">Logout</a>
+</div>
+{% endblock %}

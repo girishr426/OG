@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Your Cart</h2>
+{% if cart %}
+<form method="post">
+<table class="table">
+  <tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr>
+  {% for item in cart %}
+  <tr>
+    <td>{{ item.name }}</td>
+    <td>₹{{ '%.2f'|format(item.price) }}</td>
+    <td><input type="number" min="1" name="qty_{{ item.id }}" value="{{ item.quantity }}"></td>
+    <td>₹{{ '%.2f'|format(item.price * item.quantity) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<div class="actions">
+  <strong>Total: ₹{{ '%.2f'|format(total) }}</strong>
+  <button type="submit">Update Cart</button>
+  <a class="btn" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
+</div>
+</form>
+{% else %}
+<p>Your cart is empty.</p>
+{% endif %}
+{% endblock %}

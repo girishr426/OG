@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title or 'Organic Gut Point' }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="{{ url_for('index') }}">🌱 Organic Gut Point</a></h1>
+      <nav>
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('cart') }}">Cart ({{ (session.get('cart') or [])|length }})</a>
+        <a href="{{ url_for('admin_login') }}">Admin</a>
+      </nav>
+    </div>
+  </header>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash">
+      {% for category, message in messages %}
+        <div class="flash-item {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% endwith %}
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    <div class="container">© Organic Gut Point</div>
+  </footer>
+</body>
+</html>

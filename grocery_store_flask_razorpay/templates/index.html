@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Products</h2>
+<div class="grid">
+  {% for p in products %}
+  <div class="card">
+    <h3><a href="{{ url_for('product_detail', pid=p.id) }}">{{ p.name }}</a></h3>
+    <p class="price">₹{{ '%.2f'|format(p.price) }}</p>
+    <p>{{ p.description }}</p>
+    <p class="meta">Estimated delivery: {{ p.estimated_delivery_date or 'in ' ~ (p.estimated_delivery_days or 2) ~ ' day(s)' }}</p>
+    <form action="{{ url_for('add_to_cart', pid=p.id) }}" method="get">
+      <button>Add to Cart</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

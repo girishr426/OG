@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<article>
+  <h2>{{ product.name }}</h2>
+  <p class="price">₹{{ '%.2f'|format(product.price) }}</p>
+  <p>{{ product.description }}</p>
+  <p class="meta">Estimated delivery: {{ est_date }}</p>
+  <form action="{{ url_for('add_to_cart', pid=product.id) }}" method="get">
+    <button>Add to Cart</button>
+  </form>
+</article>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Payment (Mock)</h2>
+<p>Order #{{ order.id }} — Total: ₹{{ '%.2f'|format(order.total_amount) }}</p>
+<p>Razorpay is not configured. This mock screen simulates outcomes.</p>
+<form method="post" action="{{ url_for('checkout') }}" class="form">
+  <button class="btn" onclick="alert('Simulated success');">Simulate Success</button>
+</form>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Thank you! Your payment was successful.</h2>
+<p>Order #{{ order.id }} placed on {{ order.created_at }}.</p>
+<p>Estimated delivery by <strong>{{ order.estimated_delivery_date }}</strong>.</p>
+<table class="table">
+  <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
+  {% for it in items %}
+  <tr><td>{{ it.name }}</td><td>{{ it.quantity }}</td><td>₹{{ '%.2f'|format(it.unit_price) }}</td></tr>
+  {% endfor %}
+</table>
+<a href="{{ url_for('index') }}" class="btn">Continue Shopping</a>
+{% endblock %}
