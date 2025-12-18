@@ -1,11 +1,24 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>{{ 'Edit Product' if product else 'New Product' }}</h2>
-<form method="post" class="form">
+<form method="post" class="form" enctype="multipart/form-data">
   <label>Name<input name="name" value="{{ product.name if product else '' }}" required></label>
   <label>Description<textarea name="description">{{ product.description if product else '' }}</textarea></label>
   <label>Price<input type="number" step="0.01" name="price" value="{{ product.price if product else '' }}" required></label>
   <label>Stock<input type="number" name="stock" value="{{ product.stock if product else 0 }}" required></label>
+  
+  <fieldset>
+    <legend>Product Image</legend>
+    {% if product and product.image_path %}
+    <div>
+      <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}" style="max-width: 200px; margin-bottom: 10px;">
+      <p>Current image: {{ product.image_path }}</p>
+    </div>
+    {% endif %}
+    <label>Upload Image (JPG/PNG)<input type="file" name="image" accept="image/*"></label>
+    <p class="note">Leave blank to keep current image.</p>
+  </fieldset>
+  
   <fieldset>
     <legend>Estimated Delivery</legend>
     <label>Days<input type="number" name="estimated_delivery_days" value="{{ product.estimated_delivery_days if product else '' }}"></label>

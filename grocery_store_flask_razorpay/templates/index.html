@@ -4,6 +4,9 @@
 <div class="grid">
   {% for p in products %}
   <div class="card">
+    {% if p.image_path %}
+    <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.name }}" class="product-image">
+    {% endif %}
     <h3><a href="{{ url_for('product_detail', pid=p.id) }}">{{ p.name }}</a></h3>
     <p class="price">₹{{ '%.2f'|format(p.price) }}</p>
     <p>{{ p.description }}</p>

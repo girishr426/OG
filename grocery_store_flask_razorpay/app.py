@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import sqlite3, os, hmac, hashlib
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from PIL import Image
 
 # Optional: Razorpay SDK (install via pip)
 try:
@@ -9,9 +11,25 @@ try:
 except ImportError:
     razorpay = None
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('APP_SECRET_KEY', 'change-this-secret-key')
 DB_PATH = 'store.db'
+
+# Session configuration - Keep admin logged in
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # 30 days session expiry
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+
+# Image upload configuration
+UPLOAD_FOLDER = 'static/product_images'
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['MAX_CONTENT_LENGTH'] = MAX_IMAGE_SIZE
+
 
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET')
@@ -20,6 +38,38 @@ RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET')
 client = None
 if razorpay and RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
     client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def save_product_image(file, product_id):
+    """Save and optimize product image"""
+    if not file or file.filename == '':
+        return None
+    
+    if not allowed_file(file.filename):
+        flash('Invalid file type. Allowed: JPG, PNG, GIF', 'error')
+        return None
+    
+    try:
+        # Save with secure filename
+        filename = secure_filename(f"product_{product_id}_{datetime.now().timestamp()}.jpg")
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        
+        # Open, optimize and save image
+        img = Image.open(file)
+        img = img.convert('RGB')
+        img.thumbnail((400, 400))
+        img.save(filepath, 'JPEG', quality=85, optimize=True)
+        
+        return f'product_images/{filename}'
+    except Exception as e:
+        flash(f'Error uploading image: {str(e)}', 'error')
+        return None
+
 
 ########################
 # Database utilities
@@ -42,7 +92,8 @@ def init_db():
             price REAL NOT NULL,
             stock INTEGER DEFAULT 0,
             estimated_delivery_days INTEGER,
-            estimated_delivery_date TEXT
+            estimated_delivery_date TEXT,
+            image_path TEXT
         )
     ''')
     cur.execute('''
@@ -73,6 +124,20 @@ def init_db():
         )
     ''')
     cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            phone TEXT,
+            address TEXT,
+            city TEXT,
+            pincode TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        )
+    ''')
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS admin_users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
@@ -90,12 +155,12 @@ def init_db():
     cur.execute('SELECT COUNT(*) as c FROM products')
     if cur.fetchone()['c'] == 0:
         sample = [
-            ('Basmati Rice 5kg', 'Premium aged basmati rice', 649.0, 50, 2, None),
-            ('Fresh Milk 1L', 'Pasteurized toned milk', 58.0, 100, 1, None),
-            ('Organic Eggs (12)', 'Free-range organic eggs', 110.0, 80, 2, None),
-            ('Tomatoes 1kg', 'Farm-fresh tomatoes', 35.0, 150, 1, None),
+            ('Basmati Rice 5kg', 'Premium aged basmati rice', 649.0, 50, 2, None, 'product_images/rice.jpg'),
+            ('Fresh Milk 1L', 'Pasteurized toned milk', 58.0, 100, 1, None, 'product_images/milk.jpg'),
+            ('Organic Eggs (12)', 'Free-range organic eggs', 110.0, 80, 2, None, 'product_images/eggs.jpg'),
+            ('Tomatoes 1kg', 'Farm-fresh tomatoes', 35.0, 150, 1, None, 'product_images/tomatoes.jpg'),
         ]
-        cur.executemany('INSERT INTO products (name, description, price, stock, estimated_delivery_days, estimated_delivery_date) VALUES (?, ?, ?, ?, ?, ?)', sample)
+        cur.executemany('INSERT INTO products (name, description, price, stock, estimated_delivery_days, estimated_delivery_date, image_path) VALUES (?, ?, ?, ?, ?, ?, ?)', sample)
     conn.commit()
     conn.close()
 
@@ -191,6 +256,15 @@ def cart():
     return render_template('cart.html', cart=cart, total=total)
 
 
+@app.route('/remove_from_cart/<int:pid>')
+def remove_from_cart(pid):
+    cart = session.get('cart', [])
+    cart = [item for item in cart if item['id'] != pid]
+    session['cart'] = cart
+    flash('Item removed from cart', 'success')
+    return redirect(url_for('cart'))
+
+
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
     cart = session.get('cart', [])
@@ -238,7 +312,24 @@ def checkout():
         session['current_order_id'] = order_id
         return redirect(url_for('pay'))
 
-    return render_template('checkout.html', cart=cart, total=cart_total(cart))
+    # Pre-fill user data if logged in
+    user_data = {}
+    if session.get('user_logged_in'):
+        user_id = session.get('user_id')
+        conn = get_db()
+        user = conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone()
+        conn.close()
+        if user:
+            user_data = {
+                'name': user['full_name'],
+                'email': user['email'],
+                'phone': user['phone'],
+                'address': user['address'],
+                'city': user['city'],
+                'pincode': user['pincode']
+            }
+    
+    return render_template('checkout.html', cart=cart, total=cart_total(cart), user_data=user_data)
 
 
 @app.route('/pay', methods=['GET'])
@@ -312,7 +403,146 @@ def razorpay_webhook():
     return 'ok', 200
 
 ########################
-# Admin routes (unchanged)
+# User Authentication Routes
+########################
+
+@app.route('/user/register', methods=['GET', 'POST'])
+def user_register():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        password_confirm = request.form.get('password_confirm', '')
+        full_name = request.form.get('full_name', '').strip()
+        phone = request.form.get('phone', '').strip()
+        
+        # Validation
+        if not email or not password or not full_name:
+            flash('Email, password, and name are required', 'error')
+            return redirect(url_for('user_register'))
+        
+        if password != password_confirm:
+            flash('Passwords do not match', 'error')
+            return redirect(url_for('user_register'))
+        
+        if len(password) < 6:
+            flash('Password must be at least 6 characters', 'error')
+            return redirect(url_for('user_register'))
+        
+        conn = get_db()
+        existing = conn.execute('SELECT id FROM users WHERE email=?', (email,)).fetchone()
+        if existing:
+            conn.close()
+            flash('Email already registered', 'error')
+            return redirect(url_for('user_register'))
+        
+        try:
+            conn.execute('INSERT INTO users (email, password_hash, full_name, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+                        (email, generate_password_hash(password), full_name, phone, datetime.now().isoformat(), datetime.now().isoformat()))
+            conn.commit()
+            conn.close()
+            flash('Registration successful! Please log in.', 'success')
+            # Set flag for first-time login
+            session['first_time_login'] = True
+            return redirect(url_for('user_login'))
+        except Exception as e:
+            conn.close()
+            flash(f'Registration failed: {str(e)}', 'error')
+            return redirect(url_for('user_register'))
+    
+    return render_template('user_register.html')
+
+
+@app.route('/user/login', methods=['GET', 'POST'])
+def user_login():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        
+        if not email or not password:
+            flash('Email and password are required', 'error')
+            return redirect(url_for('user_login'))
+        
+        conn = get_db()
+        user = conn.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user['password_hash'], password):
+            session.permanent = True
+            session['user_logged_in'] = True
+            session['user_id'] = user['id']
+            session['user_email'] = user['email']
+            session['user_name'] = user['full_name']
+            
+            # Check if this is first-time login after registration
+            if session.get('first_time_login'):
+                session.pop('first_time_login', None)
+                flash(f'Welcome, {user["full_name"]}! Your account is ready.', 'success')
+            else:
+                flash(f'Welcome back, {user["full_name"]}!', 'success')
+            return redirect(url_for('index'))
+        
+        flash('Invalid email or password', 'error')
+        return redirect(url_for('user_login'))
+    
+    return render_template('user_login.html')
+
+
+@app.route('/user/logout')
+def user_logout():
+    session.pop('user_logged_in', None)
+    session.pop('user_id', None)
+    session.pop('user_email', None)
+    session.pop('user_name', None)
+    flash('Logged out successfully', 'success')
+    return redirect(url_for('index'))
+
+
+@app.route('/user/profile', methods=['GET', 'POST'])
+def user_profile():
+    if not session.get('user_logged_in'):
+        flash('Please log in first', 'error')
+        return redirect(url_for('user_login'))
+    
+    user_id = session.get('user_id')
+    conn = get_db()
+    user = conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone()
+    
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        phone = request.form.get('phone', '').strip()
+        address = request.form.get('address', '').strip()
+        city = request.form.get('city', '').strip()
+        pincode = request.form.get('pincode', '').strip()
+        
+        conn.execute('UPDATE users SET full_name=?, phone=?, address=?, city=?, pincode=?, updated_at=? WHERE id=?',
+                    (full_name, phone, address, city, pincode, datetime.now().isoformat(), user_id))
+        conn.commit()
+        
+        # Update session
+        session['user_name'] = full_name
+        
+        conn.close()
+        flash('Profile updated successfully', 'success')
+        return redirect(url_for('user_profile'))
+    
+    conn.close()
+    return render_template('user_profile.html', user=user)
+
+
+@app.route('/user/orders')
+def user_orders():
+    if not session.get('user_logged_in'):
+        flash('Please log in first', 'error')
+        return redirect(url_for('user_login'))
+    
+    email = session.get('user_email')
+    conn = get_db()
+    orders = conn.execute('SELECT * FROM orders WHERE email=? ORDER BY created_at DESC', (email,)).fetchall()
+    conn.close()
+    return render_template('user_orders.html', orders=orders)
+
+########################
+# Admin routes
 ########################
 
 def is_admin():
@@ -328,7 +558,9 @@ def admin_login():
         admin = conn.execute('SELECT * FROM admin_users WHERE username=?', (username,)).fetchone()
         conn.close()
         if admin and check_password_hash(admin['password_hash'], password):
+            session.permanent = True  # Make session permanent
             session['admin_logged_in'] = True
+            session['admin_username'] = username  # Store username in session
             flash('Welcome, admin!', 'success')
             return redirect(url_for('admin_dashboard'))
         flash('Invalid credentials', 'error')
@@ -338,6 +570,7 @@ def admin_login():
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('admin_logged_in', None)
+    session.pop('admin_username', None)  # Clear username from session
     flash('Logged out', 'success')
     return redirect(url_for('admin_login'))
 
@@ -377,12 +610,37 @@ def admin_product_new():
         stock = int(request.form.get('stock', '0'))
         est_days = request.form.get('estimated_delivery_days')
         est_date = request.form.get('estimated_delivery_date')
-        conn = get_db()
-        conn.execute('INSERT INTO products (name, description, price, stock, estimated_delivery_days, estimated_delivery_date) VALUES (?, ?, ?, ?, ?, ?)',
-                     (name, description, price, stock, est_days if est_days else None, est_date if est_date else None))
-        conn.commit(); conn.close()
-        flash('Product created', 'success')
-        return redirect(url_for('admin_products'))
+        
+        # Handle image upload
+        image_path = None
+        if 'image' in request.files and request.files['image'].filename != '':
+            file = request.files['image']
+            # Create temporary product to get ID for filename
+            conn = get_db()
+            cursor = conn.execute('INSERT INTO products (name, description, price, stock, estimated_delivery_days, estimated_delivery_date) VALUES (?, ?, ?, ?, ?, ?)',
+                         (name, description, price, stock, est_days if est_days else None, est_date if est_date else None))
+            conn.commit()
+            product_id = cursor.lastrowid
+            conn.close()
+            
+            # Save image
+            image_path = save_product_image(file, product_id)
+            
+            # Update product with image path
+            if image_path:
+                conn = get_db()
+                conn.execute('UPDATE products SET image_path=? WHERE id=?', (image_path, product_id))
+                conn.commit(); conn.close()
+            
+            flash('Product created', 'success')
+            return redirect(url_for('admin_products'))
+        else:
+            conn = get_db()
+            conn.execute('INSERT INTO products (name, description, price, stock, estimated_delivery_days, estimated_delivery_date) VALUES (?, ?, ?, ?, ?, ?)',
+                         (name, description, price, stock, est_days if est_days else None, est_date if est_date else None))
+            conn.commit(); conn.close()
+            flash('Product created', 'success')
+            return redirect(url_for('admin_products'))
     return render_template('admin_product_form.html', product=None)
 
 
@@ -403,8 +661,25 @@ def admin_product_edit(pid):
         stock = int(request.form.get('stock', '0'))
         est_days = request.form.get('estimated_delivery_days')
         est_date = request.form.get('estimated_delivery_date')
-        conn.execute('UPDATE products SET name=?, description=?, price=?, stock=?, estimated_delivery_days=?, estimated_delivery_date=? WHERE id=?',
-                     (name, description, price, stock, est_days if est_days else None, est_date if est_date else None, pid))
+        
+        # Handle image upload
+        image_path = product['image_path']
+        if 'image' in request.files and request.files['image'].filename != '':
+            file = request.files['image']
+            new_image_path = save_product_image(file, pid)
+            if new_image_path:
+                # Delete old image if exists
+                if image_path:
+                    old_filepath = os.path.join('static', image_path)
+                    if os.path.exists(old_filepath):
+                        try:
+                            os.remove(old_filepath)
+                        except:
+                            pass
+                image_path = new_image_path
+        
+        conn.execute('UPDATE products SET name=?, description=?, price=?, stock=?, estimated_delivery_days=?, estimated_delivery_date=?, image_path=? WHERE id=?',
+                     (name, description, price, stock, est_days if est_days else None, est_date if est_date else None, image_path, pid))
         conn.commit(); conn.close()
         flash('Product updated', 'success')
         return redirect(url_for('admin_products'))

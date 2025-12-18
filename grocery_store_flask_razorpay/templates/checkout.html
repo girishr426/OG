@@ -3,14 +3,17 @@
 <h2>Checkout</h2>
 <form method="post" class="form">
   <div class="grid-2">
-    <label>Name<input name="name" required></label>
-    <label>Email<input type="email" name="email" required></label>
-    <label>Phone<input name="phone" required></label>
-    <label>Address<textarea name="address" required></textarea></label>
-    <label>City<input name="city" required></label>
-    <label>Pincode<input name="pincode" required></label>
+    <label>Name<input name="name" value="{{ user_data.get('name', '') }}" required></label>
+    <label>Email<input type="email" name="email" value="{{ user_data.get('email', '') }}" required></label>
+    <label>Phone<input name="phone" value="{{ user_data.get('phone', '') }}" required></label>
+    <label>City<input name="city" value="{{ user_data.get('city', '') }}" required></label>
+    <label>Pincode<input name="pincode" value="{{ user_data.get('pincode', '') }}" required></label>
   </div>
+  <label>Address<textarea name="address" required>{{ user_data.get('address', '') }}</textarea></label>
   <p><strong>Order Total:</strong> ₹{{ '%.2f'|format(total) }}</p>
   <button type="submit">Continue to Payment</button>
+  {% if not session.get('user_logged_in') %}
+  <p class="note">Not registered? <a href="{{ url_for('user_register') }}">Create an account</a> to save your details and track orders!</p>
+  {% endif %}
 </form>
 {% endblock %}

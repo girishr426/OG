@@ -13,7 +13,22 @@
       <nav>
         <a href="{{ url_for('index') }}">Home</a>
         <a href="{{ url_for('cart') }}">Cart ({{ (session.get('cart') or [])|length }})</a>
-        <a href="{{ url_for('admin_login') }}">Admin</a>
+        
+        {% if session.get('admin_logged_in') %}
+          <a href="{{ url_for('admin_products') }}">Manage Products</a>
+          <a href="{{ url_for('admin_orders') }}">Manage Orders</a>
+          <span class="user-info">👤 {{ session.get('admin_username') }}</span>
+          <a href="{{ url_for('admin_logout') }}" class="logout-link">Logout</a>
+        {% elif session.get('user_logged_in') %}
+          <a href="{{ url_for('user_profile') }}">Profile</a>
+          <a href="{{ url_for('user_orders') }}">Orders</a>
+          <span class="user-info">👤 {{ session.get('user_name') }}</span>
+          <a href="{{ url_for('user_logout') }}" class="logout-link">Logout</a>
+        {% else %}
+          <a href="{{ url_for('user_login') }}">Login</a>
+          <a href="{{ url_for('user_register') }}">Register</a>
+          <a href="{{ url_for('admin_login') }}">Admin</a>
+        {% endif %}
       </nav>
     </div>
   </header>
