@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>My Orders</h2>
+{% if orders %}
+<div class="table">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Date</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Delivery</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td><a href="{{ url_for('order_success', order_id=order.id) }}">#{{ order.id }}</a></td>
+        <td>{{ order.created_at.split('T')[0] }}</td>
+        <td>₹{{ '%.2f'|format(order.total_amount) }}</td>
+        <td>
+          <span class="status {{ order.payment_status }}">{{ order.payment_status|upper }}</span>
+        </td>
+        <td>{{ order.estimated_delivery_date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>No orders yet. <a href="{{ url_for('index') }}">Start shopping!</a></p>
+{% endif %}
+{% endblock %}

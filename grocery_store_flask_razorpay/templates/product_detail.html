@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
 <article>
+  {% if product.image_path %}
+  <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}" class="product-image-detail">
+  {% endif %}
   <h2>{{ product.name }}</h2>
   <p class="price">₹{{ '%.2f'|format(product.price) }}</p>
   <p>{{ product.description }}</p>

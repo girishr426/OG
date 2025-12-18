@@ -4,13 +4,14 @@
 {% if cart %}
 <form method="post">
 <table class="table">
-  <tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr>
+  <tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr>
   {% for item in cart %}
   <tr>
     <td>{{ item.name }}</td>
     <td>₹{{ '%.2f'|format(item.price) }}</td>
     <td><input type="number" min="1" name="qty_{{ item.id }}" value="{{ item.quantity }}"></td>
     <td>₹{{ '%.2f'|format(item.price * item.quantity) }}</td>
+    <td><a href="{{ url_for('remove_from_cart', pid=item.id) }}" class="btn danger" onclick="return confirm('Remove this item from cart?')">Remove</a></td>
   </tr>
   {% endfor %}
 </table>
