@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width: 1000px; margin: 2rem auto;">
+  <div class="admin-header">
+    <h2>Manage Catalog Images</h2>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn">← Back to Dashboard</a>
+  </div>
+
+  <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+    <h3>Upload Catalog Image</h3>
+    <form method="post" action="{{ url_for('admin_catalog_images_upload') }}" enctype="multipart/form-data" class="form">
+      <div style="margin-bottom: 1.5rem;">
+        <label for="region">Region:</label>
+        <select id="region" name="region" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+          <option value="">-- Select Region --</option>
+          <option value="left">Left (Body Left Margin)</option>
+          <option value="right">Right (Body Right Margin)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label for="image">Image File:</label>
+        <input type="file" id="image" name="image" accept="image/*" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        <small style="color: #666; display: block; margin-top: 0.5rem;">Supported formats: JPG, PNG, GIF (Max 5MB) • Up to 4 images per region</small>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label for="alt_text">Alt Text (for accessibility):</label>
+        <input type="text" id="alt_text" name="alt_text" placeholder="e.g., Organic vegetables display" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <button type="submit" class="btn" style="background: #2ea043;">Upload Image</button>
+    </form>
+  </div>
+
+  <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <h3>Current Catalog Images</h3>
+    
+    {% if images %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+      {% for img in images %}
+      <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; padding: 1rem;">
+        <div style="background: #f5f5f5; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; min-height: 150px;">
+          <img src="{{ url_for('static', filename=img.image_path) }}" alt="{{ img.alt_text }}" style="max-width: 100%; max-height: 150px; object-fit: contain;">
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+          <strong style="display: block; margin-bottom: 0.5rem;">Region:</strong>
+          <span style="background: #e8f5e9; padding: 0.3rem 0.8rem; border-radius: 4px; display: inline-block;">{{ img.region.capitalize() }} (#{{ img.position }})</span>
+          
+          <strong style="display: block; margin-top: 1rem; margin-bottom: 0.5rem;">Alt Text:</strong>
+          <p style="margin: 0; color: #666;">{{ img.alt_text }}</p>
+          
+          <strong style="display: block; margin-top: 1rem; margin-bottom: 0.5rem;">File:</strong>
+          <p style="margin: 0; color: #999; font-size: 0.9rem; word-break: break-all;">{{ img.image_path }}</p>
+          
+          <strong style="display: block; margin-top: 1rem; margin-bottom: 0.5rem;">Uploaded:</strong>
+          <p style="margin: 0; color: #999; font-size: 0.9rem;">{{ img.created_at }}</p>
+        </div>
+        
+        <form method="post" action="{{ url_for('admin_catalog_images_delete', region=img.region, position=img.position) }}" style="margin-top: 1rem;" onsubmit="return confirm('Delete this image?');">
+          <button type="submit" class="btn" style="background: #d32f2f; width: 100%; padding: 0.5rem;">Delete</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 2rem;">No catalog images uploaded yet. Upload images to display them in the body left and right regions.</p>
+    {% endif %}
+  </div>
+
+  <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; margin-top: 2rem; border-left: 4px solid #2ea043;">
+    <h4 style="margin-top: 0;">ℹ️ Information</h4>
+    <ul style="margin: 0.5rem 0; padding-left: 1.5rem; color: #555;">
+      <li>Upload up to 4 images per region (Left and Right)</li>
+      <li>Images for "Left" region display in the left margin of the product page body</li>
+      <li>Images for "Right" region display in the right margin of the product page body</li>
+      <li>Images are displayed in order (position 1, 2, 3, 4) in the scrolling animation</li>
+      <li>Images will be automatically optimized and converted to JPEG format</li>
+      <li>Recommended image size: 300x300px or larger for best display</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

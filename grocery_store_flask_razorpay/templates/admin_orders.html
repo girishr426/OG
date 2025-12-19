@@ -1,29 +1,34 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Manage Orders</h2>
-<table class="table">
-  <tr><th>ID</th><th>Customer</th><th>Total</th><th>Status</th><th>Est. Delivery</th><th>Order ID (Razorpay)</th><th>Created</th><th>Action</th></tr>
+<div class="admin-orders-list">
   {% for o in orders %}
-  <tr>
-    <td>#{{ o.id }}</td>
-    <td>{{ o.customer_name }}<br><small>{{ o.email }}</small></td>
-    <td>₹{{ '%.2f'|format(o.total_amount) }}</td>
-    <td>{{ o.payment_status }}</td>
-    <td>{{ o.estimated_delivery_date or '-' }}</td>
-    <td>{{ o.razorpay_order_id or '-' }}</td>
-    <td>{{ o.created_at }}</td>
-    <td>
-      <form method="post" action="{{ url_for('admin_order_status', oid=o.id) }}">
-        <select name="status">
-          <option value="pending" {% if o.payment_status=='pending' %}selected{% endif %}>pending</option>
-          <option value="paid" {% if o.payment_status=='paid' %}selected{% endif %}>paid</option>
-          <option value="failed" {% if o.payment_status=='failed' %}selected{% endif %}>failed</option>
-        </select>
-        <input name="estimated_delivery_date" value="{{ o.estimated_delivery_date or '' }}" placeholder="YYYY-MM-DD">
-        <button>Update</button>
-      </form>
-    </td>
-  </tr>
+  <div class="admin-order-card">
+    <div class="admin-order-header">
+      <div class="admin-order-id">#{{ o.id }}</div>
+      <div class="admin-order-status">
+        <span class="status {% if o.payment_status == 'paid' %}paid{% elif o.payment_status == 'pending' %}pending{% else %}failed{% endif %}">{{ o.payment_status }}</span>
+      </div>
+    </div>
+    <div class="admin-order-details">
+      <div><strong>{{ o.customer_name }}</strong></div>
+      <div class="text-small">{{ o.email }}</div>
+      <div class="text-small">Total: ₹{{ '%.2f'|format(o.total_amount) }}</div>
+      <div class="text-small">Created: {{ o.created_at }}</div>
+      {% if o.razorpay_order_id %}
+      <div class="text-small">Razorpay: {{ o.razorpay_order_id }}</div>
+      {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('admin_order_status', oid=o.id) }}" class="admin-order-form">
+      <select name="status">
+        <option value="pending" {% if o.payment_status=='pending' %}selected{% endif %}>Pending</option>
+        <option value="paid" {% if o.payment_status=='paid' %}selected{% endif %}>Paid</option>
+        <option value="failed" {% if o.payment_status=='failed' %}selected{% endif %}>Failed</option>
+      </select>
+      <input type="date" name="estimated_delivery_date" value="{{ o.estimated_delivery_date or '' }}" placeholder="Delivery Date">
+      <button class="btn-small">Update</button>
+    </form>
+  </div>
   {% endfor %}
-</table>
+</div>
 {% endblock %}

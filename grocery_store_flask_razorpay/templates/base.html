@@ -2,34 +2,114 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title or 'Organic Gut Point' }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="theme-color" content="#1f6feb">
+  <meta name="description" content="{{ site_meta.description }}">
+  <title>{{ title or site_meta.title }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=5.5">
+  <link rel="canonical" href="{{ (site_meta.base_url or request.url_root[:-1]) ~ request.path }}">
+  <meta property="og:title" content="{{ title or site_meta.title }}">
+  <meta property="og:description" content="{{ site_meta.description }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ (site_meta.base_url or request.url_root[:-1]) ~ request.path }}">
+  <meta property="og:image" content="{{ url_for('static', filename='favicon.svg', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ title or site_meta.title }}">
+  <meta name="twitter:description" content="{{ site_meta.description }}">
+  <script>
+    // Prevent zoom and ensure viewport is respected on every page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+      }
+      // Reset any accidental zoom
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function() {
+          if (window.visualViewport.scale !== 1) {
+            document.documentElement.style.zoom = 1;
+          }
+        });
+      }
+    });
+  </script>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1><a href="{{ url_for('index') }}">🌱 Organic Gut Point</a></h1>
-      <nav>
-        <a href="{{ url_for('index') }}">Home</a>
-        <a href="{{ url_for('cart') }}">Cart ({{ (session.get('cart') or [])|length }})</a>
+  {% if site_announcement %}
+  <div class="topbar">
+    <div class="container">{{ site_announcement }}</div>
+  </div>
+  {% endif %}
+  <header style="overflow: visible;">
+    <span style="position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); font-size: 1.8rem; font-weight: 900; color: white; letter-spacing: 2px; white-space: nowrap; z-index: 10;">💰 WEALTH</span>
+    <span style="position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%); font-size: 1.8rem; font-weight: 900; color: white; letter-spacing: 2px; white-space: nowrap; z-index: 10;">❤️ HEALTH</span>
+    <div class="container" style="position: relative;">
+      <!-- Row 1: Logo and Navigation -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; flex-wrap: wrap;">
+        <h1><a href="{{ url_for('reset_filters') }}">🌱 Organic Gut Point</a></h1>
+        <nav aria-label="Primary">
+          <a href="{{ url_for('reset_filters') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
+          <a href="{{ url_for('cart') }}" {% if request.endpoint == 'cart' %}class="active"{% endif %}>Cart ({{ (session.get('cart') or [])|length }})</a>
+          
+          {% if session.get('admin_logged_in') %}
+            <a href="{{ url_for('admin_products') }}" {% if 'admin_product' in request.endpoint %}class="active"{% endif %}>Products</a>
+            <a href="{{ url_for('admin_orders') }}" {% if request.endpoint == 'admin_orders' %}class="active"{% endif %}>Orders</a>
+            <a href="{{ url_for('admin_subscribers') }}" {% if request.endpoint == 'admin_subscribers' %}class="active"{% endif %}>Subscribers</a>
+            <a href="{{ url_for('admin_catalog_images') }}" {% if request.endpoint == 'admin_catalog_images' %}class="active"{% endif %}>Catalog Images</a>
+            <span class="user-info">👤 {{ session.get('admin_username') }}</span>
+            <a href="{{ url_for('admin_logout') }}" class="logout-link">Logout</a>
+          {% elif session.get('user_logged_in') %}
+            <a href="{{ url_for('user_profile') }}" {% if request.endpoint == 'user_profile' %}class="active"{% endif %}>Profile</a>
+            <a href="{{ url_for('user_orders') }}" {% if request.endpoint == 'user_orders' %}class="active"{% endif %}>Orders</a>
+            <span class="user-info">👤 {{ session.get('user_name') }}</span>
+            <a href="{{ url_for('user_logout') }}" class="logout-link">Logout</a>
+          {% else %}
+            <a href="{{ url_for('user_login') }}" {% if request.endpoint == 'user_login' %}class="active"{% endif %}>Login</a>
+            <a href="{{ url_for('user_register') }}" {% if request.endpoint == 'user_register' %}class="active"{% endif %}>Register</a>
+            <a href="{{ url_for('admin_login') }}" {% if request.endpoint == 'admin_login' %}class="active"{% endif %}>Admin</a>
+          {% endif %}
+        </nav>
+      </div>
+      
+      <!-- Row 2: Search, Product Region Selector, and Product Status Filter (Always render for consistent header height) -->
+      <div class="filter-section" style="display: flex; align-items: center; gap: 1rem; width: 100%; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.2); flex-wrap: wrap; min-height: 3rem;">
+        {% if request.endpoint in ('index', 'search') or 'index' in request.endpoint or 'search' in request.endpoint %}
+        <form class="site-search" id="site-search-form" action="{{ url_for('search') }}" method="get" role="search">
+          <input type="search" id="search-input" name="q" placeholder="Search products..." aria-label="Search products" value="{{ request.args.get('q','') }}">
+          <button type="submit" class="btn">Search</button>
+        </form>
         
-        {% if session.get('admin_logged_in') %}
-          <a href="{{ url_for('admin_products') }}">Manage Products</a>
-          <a href="{{ url_for('admin_orders') }}">Manage Orders</a>
-          <span class="user-info">👤 {{ session.get('admin_username') }}</span>
-          <a href="{{ url_for('admin_logout') }}" class="logout-link">Logout</a>
-        {% elif session.get('user_logged_in') %}
-          <a href="{{ url_for('user_profile') }}">Profile</a>
-          <a href="{{ url_for('user_orders') }}">Orders</a>
-          <span class="user-info">👤 {{ session.get('user_name') }}</span>
-          <a href="{{ url_for('user_logout') }}" class="logout-link">Logout</a>
-        {% else %}
-          <a href="{{ url_for('user_login') }}">Login</a>
-          <a href="{{ url_for('user_register') }}">Register</a>
-          <a href="{{ url_for('admin_login') }}">Admin</a>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <form class="region-select-row" action="{{ url_for('set_region') }}" method="post" aria-label="Choose region">
+            <label for="region_id">Select Region:</label>
+            <select id="region_id" name="region_id" onchange="this.form.submit()">
+              <option value="">None</option>
+              <option value="all" {% if current_region_id == 'all' %}selected{% endif %}>All Regions</option>
+              {% for r in regions %}
+              <option value="{{ r.id }}" {% if current_region_id == r.id %}selected{% endif %}>{{ r.name }}</option>
+              {% endfor %}
+            </select>
+          </form>
+
+          <form class="region-select-row" action="{{ url_for('set_product_status') }}" method="post" aria-label="Choose product status">
+            <label for="product_status">Status:</label>
+            <select id="product_status" name="product_status" onchange="this.form.submit()">
+              <option value="">None</option>
+              <option value="Upcoming Harvest" {% if current_product_status == 'Upcoming Harvest' %}selected{% endif %}>Upcoming Harvest</option>
+              <option value="Harvest Complete" {% if current_product_status == 'Harvest Complete' %}selected{% endif %}>Harvest Complete</option>
+              <option value="Final Product" {% if current_product_status == 'Final Product' %}selected{% endif %}>Final Product</option>
+            </select>
+          </form>
+
+          {% if current_region_name and current_region_id and current_region_id != 'all' %}
+          <span class="user-info">📍 {{ current_region_name }}</span>
+          {% elif current_region_id == 'all' %}
+          <span class="user-info">🌍 All Regions</span>
+          {% endif %}
+        </div>
         {% endif %}
-      </nav>
+      </div>
     </div>
   </header>
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -41,11 +121,130 @@
     </div>
   {% endif %}
   {% endwith %}
+  <script>
+    // Toggle filter section visibility to maintain consistent header height
+    document.addEventListener('DOMContentLoaded', function() {
+      const isFilterPage = '{{ request.endpoint in ("index", "search") or "index" in request.endpoint or "search" in request.endpoint }}'.toLowerCase() === 'true';
+      if (isFilterPage) {
+        document.body.classList.add('filter-visible');
+      }
+    });
+  </script>
   <main class="container">
     {% block content %}{% endblock %}
   </main>
   <footer>
-    <div class="container">© Organic Gut Point</div>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h4>About</h4>
+          <p>Fresh organic groceries delivered fast. Quality you can trust.</p>
+        </div>
+        <div>
+          <h4>Customer Care</h4>
+          <ul>
+            <li><a href="{{ url_for('customer_shipping') }}">Shipping & Delivery</a></li>
+            <li><a href="{{ url_for('customer_returns') }}">Returns & Refunds</a></li>
+            <li><a href="{{ url_for('customer_contact') }}">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Newsletter</h4>
+          <form action="{{ url_for('subscribe') }}" method="post" class="newsletter-form">
+            <input type="email" name="email" placeholder="Your email" required>
+            <button type="submit" class="btn">Subscribe</button>
+          </form>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© {{ site_meta.title }}</span>
+        <div class="social-links">
+          {% if whatsapp_number %}
+          <a href="https://wa.me/{{ whatsapp_number | replace('+', '') }}" target="_blank" rel="noopener" title="Chat on WhatsApp" class="social-btn whatsapp">💬</a>
+          {% endif %}
+          <a href="https://www.instagram.com" target="_blank" rel="noopener" title="Follow on Instagram" class="social-btn">📷</a>
+          <a href="https://www.facebook.com" target="_blank" rel="noopener" title="Like on Facebook" class="social-btn">👍</a>
+          <a href="https://twitter.com" target="_blank" rel="noopener" title="Follow on Twitter" class="social-btn">𝕏</a>
+        </div>
+      </div>
+    </div>
   </footer>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "name": "{{ site_meta.title }}",
+    "url": "{{ site_meta.base_url or request.url_root }}",
+    "description": "{{ site_meta.description }}",
+    "image": "{{ url_for('static', filename='favicon.svg', _external=True) }}"
+  }
+  </script>
+
+  <dialog id="cookie-banner" class="cookie-banner" aria-label="Cookie Consent">
+    <div class="container">
+      <span>We use cookies to improve your experience. By using our site, you agree to our cookie policy.</span>
+      <button id="cookie-accept" class="btn">Accept</button>
+    </div>
+  </dialog>
+  <script>
+    (function(){
+      try {
+        var key = 'og_cookie_consent';
+        var dlg = document.getElementById('cookie-banner');
+        if (dlg && !localStorage.getItem(key)) {
+          if (typeof dlg.showModal === 'function') { dlg.showModal(); }
+          else { dlg.setAttribute('open',''); }
+        }
+        var btn = document.getElementById('cookie-accept');
+        if (btn) {
+          btn.addEventListener('click', function(){
+            localStorage.setItem(key, '1');
+            var d = document.getElementById('cookie-banner');
+            if (d && typeof d.close === 'function') { d.close(); }
+            else { d.removeAttribute('open'); }
+          });
+        }
+      } catch(e) {
+        console.error('Cookie consent init failed:', e);
+      }
+    })();
+
+    // Auto-submit search form when search input is cleared
+    (function(){
+      const searchInput = document.getElementById('search-input');
+      const searchForm = document.getElementById('site-search-form');
+      if (!searchInput || !searchForm) return;
+      
+      // Listen for the 'search' event (fired when user clicks the X button)
+      searchInput.addEventListener('search', function(){
+        // If input is empty (cleared), automatically submit the form
+        if (this.value === '') {
+          searchForm.submit();
+        }
+      });
+    })();
+  </script>
+  <script>
+    // Build background-image URLs for all catalog images
+    document.addEventListener('DOMContentLoaded', function() {
+      const leftSidebar = document.querySelector('.catalog-sidebar-left');
+      const rightSidebar = document.querySelector('.catalog-sidebar-right');
+      
+      // Get image paths from the page (they're already in HTML data or we can build from template)
+      // For now, just ensure background-image is applied
+      if (leftSidebar && !leftSidebar.style.backgroundImage) {
+        const bgImg = window.getComputedStyle(leftSidebar).backgroundImage;
+        if (!bgImg || bgImg === 'none') {
+          // Background image should be set in inline style or CSS
+        }
+      }
+      if (rightSidebar && !rightSidebar.style.backgroundImage) {
+        const bgImg = window.getComputedStyle(rightSidebar).backgroundImage;
+        if (!bgImg || bgImg === 'none') {
+          // Background image should be set in inline style or CSS
+        }
+      }
+    });
+  </script>
 </body>
 </html>

@@ -18,15 +18,41 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 2. **Install dependencies**
 ```bash
-pip install Flask Werkzeug razorpay
+pip install -r requirements.txt
 ```
 
-3. **Set environment variables** (create `.env` or export in shell)
+3. **Set environment variables**
+
+Option A — Use `.env` file (recommended for local dev)
+
+```bash
+cp data/env.example data/.env   # Windows PowerShell: Copy-Item data/env.example data/.env
+# Then edit data/.env and set your secrets, e.g.:
+# APP_SECRET_KEY=replace_with_random
+# RAZORPAY_KEY_ID=rzp_test_xxxxx
+# RAZORPAY_KEY_SECRET=xxxxx
+# RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+# ADMIN_DEFAULT_PASSWORD=your_admin_password
+```
+
+Option B — Export in shell
+
+macOS/Linux (bash/zsh):
 ```bash
 export APP_SECRET_KEY=replace_with_random
 export RAZORPAY_KEY_ID=rzp_test_xxxxx
 export RAZORPAY_KEY_SECRET=xxxxx
 export RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+export ADMIN_DEFAULT_PASSWORD=your_admin_password
+```
+
+Windows PowerShell:
+```powershell
+$env:APP_SECRET_KEY = "replace_with_random"
+$env:RAZORPAY_KEY_ID = "rzp_test_xxxxx"
+$env:RAZORPAY_KEY_SECRET = "xxxxx"
+$env:RAZORPAY_WEBHOOK_SECRET = "your_webhook_secret"
+$env:ADMIN_DEFAULT_PASSWORD = "your_admin_password"
 ```
 
 4. **Run**
@@ -61,6 +87,8 @@ https://wordpress.org/plugins/advanced-custom-fields/ ; https://woocommerce.com/
 - Payment capture can be centrally configured in the Dashboard. [Docs] (
 https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/best-practices/)
 - Use HTTPS and secure secrets.
+- Default admin user: username `admin`, password is taken from `ADMIN_DEFAULT_PASSWORD`.
+	- If not set, the app will generate a random password on first run and print it to the console.
 
 ## License
 MIT

@@ -1,14 +1,12 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Checkout</h2>
-<form method="post" class="form">
-  <div class="grid-2">
-    <label>Name<input name="name" value="{{ user_data.get('name', '') }}" required></label>
-    <label>Email<input type="email" name="email" value="{{ user_data.get('email', '') }}" required></label>
-    <label>Phone<input name="phone" value="{{ user_data.get('phone', '') }}" required></label>
-    <label>City<input name="city" value="{{ user_data.get('city', '') }}" required></label>
-    <label>Pincode<input name="pincode" value="{{ user_data.get('pincode', '') }}" required></label>
-  </div>
+<form method="post" class="form checkout-form">
+  <label>Name<input name="name" value="{{ user_data.get('name', '') }}" required></label>
+  <label>Email<input type="email" name="email" value="{{ user_data.get('email', '') }}" required></label>
+  <label>Phone<input name="phone" value="{{ user_data.get('phone', '') }}" required></label>
+  <label>City<input name="city" value="{{ user_data.get('city', '') }}" required></label>
+  <label>Pincode<input name="pincode" value="{{ user_data.get('pincode', '') }}" required></label>
   <label>Address<textarea name="address" required>{{ user_data.get('address', '') }}</textarea></label>
   <p><strong>Order Total:</strong> ₹{{ '%.2f'|format(total) }}</p>
   <button type="submit">Continue to Payment</button>
