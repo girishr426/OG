@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="admin-header">
+  <h2>Newsletter Subscribers</h2>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('admin_subscribers_export') }}">Export CSV</a>
+  </div>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Email</th>
+      <th>Subscribed At</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in subscribers %}
+    <tr>
+      <td>{{ s.email }}</td>
+      <td>{{ s.created_at or '-' }}</td>
+      <td>
+        <form action="{{ url_for('admin_subscriber_delete', sid=s.id) }}" method="post" style="display:inline-block">
+          <button class="btn-small danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

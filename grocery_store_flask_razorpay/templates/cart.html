@@ -3,20 +3,27 @@
 <h2>Your Cart</h2>
 {% if cart %}
 <form method="post">
-<table class="table">
-  <tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr>
+<div class="cart-items">
   {% for item in cart %}
-  <tr>
-    <td>{{ item.name }}</td>
-    <td>₹{{ '%.2f'|format(item.price) }}</td>
-    <td><input type="number" min="1" name="qty_{{ item.id }}" value="{{ item.quantity }}"></td>
-    <td>₹{{ '%.2f'|format(item.price * item.quantity) }}</td>
-    <td><a href="{{ url_for('remove_from_cart', pid=item.id) }}" class="btn danger" onclick="return confirm('Remove this item from cart?')">Remove</a></td>
-  </tr>
+  <div class="cart-item">
+    <div class="cart-item-details">
+      <div class="cart-item-name">{{ item.name }}</div>
+      <div class="cart-item-price">₹{{ '%.2f'|format(item.price) }}</div>
+    </div>
+    <div class="cart-item-qty">
+      <input type="number" min="1" name="qty_{{ item.id }}" value="{{ item.quantity }}" class="qty-input">
+    </div>
+    <div class="cart-item-subtotal">
+      <div>₹{{ '%.2f'|format(item.price * item.quantity) }}</div>
+      <a href="{{ url_for('remove_from_cart', pid=item.id) }}" class="btn-small danger" onclick="return confirm('Remove?')">Remove</a>
+    </div>
+  </div>
   {% endfor %}
-</table>
-<div class="actions">
+</div>
+<div class="cart-summary">
   <strong>Total: ₹{{ '%.2f'|format(total) }}</strong>
+</div>
+<div class="actions">
   <button type="submit">Update Cart</button>
   <a class="btn" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
 </div>

@@ -2,13 +2,11 @@
 {% block content %}
 <h2>My Profile</h2>
 <form method="post" class="form">
-  <div class="grid-2">
-    <label>Full Name<input name="full_name" value="{{ user.full_name or '' }}" required></label>
-    <label>Email<input type="email" value="{{ user.email }}" disabled></label>
-    <label>Phone<input name="phone" value="{{ user.phone or '' }}"></label>
-    <label>City<input name="city" value="{{ user.city or '' }}"></label>
-    <label>Pincode<input name="pincode" value="{{ user.pincode or '' }}"></label>
-  </div>
+  <label>Full Name<input name="full_name" value="{{ user.full_name or '' }}" required></label>
+  <label>Email<input type="email" value="{{ user.email }}" disabled></label>
+  <label>Phone<input name="phone" value="{{ user.phone or '' }}"></label>
+  <label>City<input name="city" value="{{ user.city or '' }}"></label>
+  <label>Pincode<input name="pincode" value="{{ user.pincode or '' }}"></label>
   <label>Address<textarea name="address">{{ user.address or '' }}</textarea></label>
   <div class="actions">
     <button type="submit">Update Profile</button>

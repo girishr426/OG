@@ -1,20 +1,224 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Products</h2>
+<!-- Hero Section with Farmers and Customer Images - Only show when NO filters are applied -->
+{% if not session.get('region_id') and not session.get('product_status') %}
+<section class="hero-section">
+  <div class="hero-container">
+    <!-- Left: Farmer Image -->
+    <div class="hero-image-wrapper hero-left">
+      <div class="hero-image-placeholder farmer-image">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Farmer illustration -->
+          <circle cx="100" cy="50" r="20" fill="#8b6f47"/>
+          <rect x="80" y="70" width="40" height="50" fill="#4a7c59" rx="5"/>
+          <rect x="70" y="120" width="15" height="40" fill="#d4a574" rx="3"/>
+          <rect x="115" y="120" width="15" height="40" fill="#d4a574" rx="3"/>
+          <circle cx="77.5" cy="160" r="8" fill="#8b6f47"/>
+          <circle cx="122.5" cy="160" r="8" fill="#8b6f47"/>
+          <!-- Hat -->
+          <ellipse cx="100" cy="35" rx="25" ry="8" fill="#654321"/>
+          <path d="M 75 35 L 70 25 L 130 25 L 125 35" fill="#8b4513"/>
+          <!-- Basket of vegetables -->
+          <path d="M 40 140 L 35 180 L 65 180 L 60 140" fill="#a0826d" stroke="#654321" stroke-width="1"/>
+          <circle cx="45" cy="160" r="4" fill="#ff6b6b"/>
+          <circle cx="55" cy="165" r="4" fill="#ffd93d"/>
+          <circle cx="50" cy="170" r="4" fill="#2ecc71"/>
+        </svg>
+        <p class="hero-label">Fresh from Farmers</p>
+      </div>
+    </div>
+
+    <!-- Center: Main Message -->
+    <div class="hero-message">
+      <h1 style="color: #1f6feb; font-size: 2.5rem; margin: 0 0 1rem 0;">🌱 Organic Gut Point</h1>
+      <p style="font-size: 1.2rem; color: #555; margin: 0.5rem 0; font-weight: 500;">Direct from Farmers to Your Table</p>
+      <p style="font-size: 1rem; color: #777; margin: 1rem 0;">100% Genuine Organic Products • Know What Your Gut Sips</p>
+    </div>
+
+    <!-- Right: Customer Image -->
+    <div class="hero-image-wrapper hero-right">
+      <div class="hero-image-placeholder customer-image">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Customer illustration -->
+          <circle cx="100" cy="50" r="20" fill="#d4a574"/>
+          <path d="M 80 70 Q 80 60 100 60 Q 120 60 120 70 L 120 100 Q 120 110 100 115 Q 80 110 80 100 Z" fill="#ff69b4" stroke="#f78ca0" stroke-width="1"/>
+          <rect x="50" y="100" width="20" height="50" fill="#d4a574" rx="3"/>
+          <rect x="130" y="100" width="20" height="50" fill="#d4a574" rx="3"/>
+          <rect x="65" y="150" width="18" height="40" fill="#4a5568" rx="3"/>
+          <rect x="117" y="150" width="18" height="40" fill="#4a5568" rx="3"/>
+          <circle cx="74" cy="190" r="6" fill="#2d3748"/>
+          <circle cx="126" cy="190" r="6" fill="#2d3748"/>
+          <!-- Smile -->
+          <circle cx="95" cy="50" r="2" fill="#000"/>
+          <circle cx="105" cy="50" r="2" fill="#000"/>
+          <path d="M 95 55 Q 100 58 105 55" stroke="#000" stroke-width="1" fill="none"/>
+          <!-- Shopping basket -->
+          <path d="M 30 140 L 25 180 L 55 180 L 50 140" fill="#8b6f47" stroke="#654321" stroke-width="1"/>
+          <path d="M 35 145 L 50 145" stroke="#654321" stroke-width="1"/>
+          <circle cx="35" cy="165" r="3" fill="#2ecc71"/>
+          <circle cx="42" cy="168" r="3" fill="#ff6b6b"/>
+          <circle cx="48" cy="164" r="3" fill="#ffd93d"/>
+        </svg>
+        <p class="hero-label">Happy Customers</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Left Side Placeholder Image -->
+<!-- Left Catalog Images - Fixed Position on Left Edge, Below Nav -->
+{% if catalog_images.get('left') and catalog_images['left']|length > 0 %}
+<div class="catalog-sidebar-left">
+  <div class="catalog-track">
+    {% for img in catalog_images['left'] %}
+    <img src="{{ url_for('static', filename=img.path) }}" alt="{{ img.alt }}" class="catalog-img" loading="lazy" decoding="async">
+    {% endfor %}
+    <!-- Duplicate images for seamless infinite loop -->
+    {% for img in catalog_images['left'] %}
+    <img src="{{ url_for('static', filename=img.path) }}" alt="{{ img.alt }}" class="catalog-img" loading="lazy" decoding="async">
+    {% endfor %}
+  </div>
+  </div>
+{% endif %}
+
+<!-- Right Catalog Images - Fixed Position on Right Edge, Below Nav -->
+{% if catalog_images.get('right') and catalog_images['right']|length > 0 %}
+<div class="catalog-sidebar-right">
+  <div class="catalog-track">
+    {% for img in catalog_images['right'] %}
+    <img src="{{ url_for('static', filename=img.path) }}" alt="{{ img.alt }}" class="catalog-img" loading="lazy" decoding="async">
+    {% endfor %}
+    <!-- Duplicate images for seamless infinite loop -->
+    {% for img in catalog_images['right'] %}
+    <img src="{{ url_for('static', filename=img.path) }}" alt="{{ img.alt }}" class="catalog-img" loading="lazy" decoding="async">
+    {% endfor %}
+  </div>
+  </div>
+{% endif %}
+
+<!-- Trust Badges - Independent of image margins -->
+<section class="trust-badges" style="position: relative; z-index: 2;">
+  <div class="badge">✅ 100% Genuine & Organic</div>
+  <div class="badge">🍵 Know What Your Gut Sips</div>
+  <div class="badge">🔒 Secure Payments</div>
+  <div class="badge">📦 Easy Returns</div>
+  <div class="badge">❤️ Trust & Transparency</div>
+  <div class="badge">📞 24x7 Support</div>
+</section>
+
+<div style="position: relative; margin-left: 100px; margin-right: 100px;">
+
+<h2>{{ 'New Products' if is_homepage else 'Products' }}</h2>
+
+<!-- Product Count & Sort -->
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+  {% if total_products %}
+  <div class="pagination-info">
+    Showing <strong>{{ ((current_page - 1) * 12) + 1 }}-{{ [current_page * 12, total_products] | min }}</strong> of <strong>{{ total_products }}</strong> products
+  </div>
+  {% endif %}
+  <form method="get" action="{{ url_for('search') if is_search_result else url_for('index') }}" style="display:flex; align-items:center; gap:0.5rem;">
+    {% if is_search_result %}
+      <input type="hidden" name="q" value="{{ search_query }}">
+    {% endif %}
+    <label for="sort" style="color:#666;">Sort by</label>
+    <select id="sort" name="sort" onchange="this.form.submit()" style="padding:0.4rem 0.6rem; border:1px solid #ddd; border-radius:6px;">
+      <option value="new" {% if sort=='new' %}selected{% endif %}>Newest</option>
+      <option value="price_low" {% if sort=='price_low' %}selected{% endif %}>Price: Low to High</option>
+      <option value="price_high" {% if sort=='price_high' %}selected{% endif %}>Price: High to Low</option>
+      <option value="name_az" {% if sort=='name_az' %}selected{% endif %}>Name: A → Z</option>
+    </select>
+  </form>
+</div>
+
 <div class="grid">
   {% for p in products %}
   <div class="card">
     {% if p.image_path %}
-    <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.name }}" class="product-image">
+    <div class="product-img-wrapper">
+      <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.name }}" class="product-image" loading="lazy" decoding="async">
+      {% if p.id in new_product_ids %}
+      <span class="new-badge">New</span>
+      {% endif %}
+      {% if p.mrp is not none and p.mrp > p.price %}
+      {% set pct = ((p.mrp - p.price) / p.mrp * 100) | round(0, 'floor') %}
+      <span class="discount-badge">{{ pct|int }}% OFF</span>
+      {% endif %}
+    </div>
     {% endif %}
     <h3><a href="{{ url_for('product_detail', pid=p.id) }}">{{ p.name }}</a></h3>
-    <p class="price">₹{{ '%.2f'|format(p.price) }}</p>
+    {% set rs = review_stats_map.get(p.id) if review_stats_map else None %}
+    {% if rs and rs.total > 0 %}
+    <div class="rating-row" title="{{ rs.avg_rating }} average from {{ rs.total }} ratings" style="display:flex; align-items:center; gap:0.4rem; color:#f59e0b; font-weight:600;">
+      <span>
+        {% for i in range(1,6) %}{% if i <= rs.avg_rating|round(0, 'floor') %}★{% else %}☆{% endif %}{% endfor %}
+      </span>
+      <span style="color:#333; font-weight:700;">{{ '%.1f'|format(rs.avg_rating) }}</span>
+      <span style="color:#777; font-size:0.9rem;">({{ rs.total }})</span>
+    </div>
+    {% endif %}
+    {% if p.mrp is not none and p.mrp > p.price %}
+      <p class="price">
+        <span style="color:#4CAF50; font-weight:700;">₹{{ '%.2f'|format(p.price) }}</span>
+        <span style="color:#999; text-decoration: line-through; margin-left: 0.4rem;">₹{{ '%.2f'|format(p.mrp) }}</span>
+      </p>
+    {% else %}
+      <p class="price">₹{{ '%.2f'|format(p.price) }}</p>
+    {% endif %}
     <p>{{ p.description }}</p>
     <p class="meta">Estimated delivery: {{ p.estimated_delivery_date or 'in ' ~ (p.estimated_delivery_days or 2) ~ ' day(s)' }}</p>
     <form action="{{ url_for('add_to_cart', pid=p.id) }}" method="get">
-      <button>Add to Cart</button>
+      <button {% if p.stock <= 0 %}disabled title="Out of Stock"{% endif %}>{{ 'Add to Cart' if p.stock > 0 else 'Out of Stock' }}</button>
     </form>
   </div>
   {% endfor %}
 </div>
+
+<!-- Pagination Controls -->
+{% if total_pages and total_pages > 1 %}
+<nav class="pagination">
+  <!-- Previous Button -->
+  {% if current_page > 1 %}
+  <a href="{% if is_search_result %}{{ url_for('search', q=search_query, sort=sort, page=current_page - 1) }}{% else %}{{ url_for('index', sort=sort, page=current_page - 1) }}{% endif %}" class="pagination-btn pagination-prev">← Previous</a>
+  {% else %}
+    <span class="pagination-btn pagination-prev disabled">← Previous</span>
+  {% endif %}
+
+  <!-- Page Numbers -->
+  <div class="pagination-pages">
+    {% set start_page = [1, current_page - 2] | max %}
+    {% set end_page = [total_pages, current_page + 2] | min %}
+    
+    <!-- First page link if not in range -->
+    {% if start_page > 1 %}
+  <a href="{% if is_search_result %}{{ url_for('search', q=search_query, sort=sort, page=1) }}{% else %}{{ url_for('index', sort=sort, page=1) }}{% endif %}" class="pagination-number">1</a>
+      {% if start_page > 2 %}<span class="pagination-dots">...</span>{% endif %}
+    {% endif %}
+
+    <!-- Page links in range -->
+    {% for page_num in range(start_page, end_page + 1) %}
+      {% if page_num == current_page %}
+        <span class="pagination-number active">{{ page_num }}</span>
+      {% else %}
+  <a href="{% if is_search_result %}{{ url_for('search', q=search_query, sort=sort, page=page_num) }}{% else %}{{ url_for('index', sort=sort, page=page_num) }}{% endif %}" class="pagination-number">{{ page_num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Last page link if not in range -->
+    {% if end_page < total_pages %}
+      {% if end_page < total_pages - 1 %}<span class="pagination-dots">...</span>{% endif %}
+  <a href="{% if is_search_result %}{{ url_for('search', q=search_query, sort=sort, page=total_pages) }}{% else %}{{ url_for('index', sort=sort, page=total_pages) }}{% endif %}" class="pagination-number">{{ total_pages }}</a>
+    {% endif %}
+  </div>
+
+  <!-- Next Button -->
+  {% if current_page < total_pages %}
+  <a href="{% if is_search_result %}{{ url_for('search', q=search_query, sort=sort, page=current_page + 1) }}{% else %}{{ url_for('index', sort=sort, page=current_page + 1) }}{% endif %}" class="pagination-btn pagination-next">Next →</a>
+  {% else %}
+    <span class="pagination-btn pagination-next disabled">Next →</span>
+  {% endif %}
+</nav>
+{% endif %}
+
 {% endblock %}
