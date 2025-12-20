@@ -107,12 +107,12 @@
   <div class="badge">📞 24x7 Support</div>
 </section>
 
-<div style="position: relative; margin-left: 100px; margin-right: 100px;">
+<div style="position: relative;">
 
-<h2>{{ 'New Products' if is_homepage else 'Products' }}</h2>
+<h2 style="margin: 1rem 0;">{{ 'New Products' if is_homepage else 'Products' }}</h2>
 
 <!-- Product Count & Sort -->
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem;">
   {% if total_products %}
   <div class="pagination-info">
     Showing <strong>{{ ((current_page - 1) * 12) + 1 }}-{{ [current_page * 12, total_products] | min }}</strong> of <strong>{{ total_products }}</strong> products
@@ -122,7 +122,7 @@
     {% if is_search_result %}
       <input type="hidden" name="q" value="{{ search_query }}">
     {% endif %}
-    <label for="sort" style="color:#666;">Sort by</label>
+    <label for="sort" style="color:#666; white-space:nowrap;">Sort by:</label>
     <select id="sort" name="sort" onchange="this.form.submit()" style="padding:0.4rem 0.6rem; border:1px solid #ddd; border-radius:6px;">
       <option value="new" {% if sort=='new' %}selected{% endif %}>Newest</option>
       <option value="price_low" {% if sort=='price_low' %}selected{% endif %}>Price: Low to High</option>
