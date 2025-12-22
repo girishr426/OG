@@ -43,74 +43,99 @@
   {% endif %}
   <header style="overflow: visible;">
     <div class="container" style="position: relative;">
-      <!-- Row 1: Logo and Navigation -->
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; flex-wrap: wrap;">
-        <h1><a href="{{ url_for('reset_filters') }}">🌱 Organic Gut Point</a></h1>
-        <nav aria-label="Primary">
-          <a href="{{ url_for('reset_filters') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
-          <a href="{{ url_for('cart') }}" {% if request.endpoint == 'cart' %}class="active"{% endif %}>Cart ({{ (session.get('cart') or [])|length }})</a>
-          
-          {% if session.get('admin_logged_in') %}
-            <a href="{{ url_for('admin_products') }}" {% if 'admin_product' in request.endpoint %}class="active"{% endif %}>Products</a>
-            <a href="{{ url_for('admin_orders') }}" {% if request.endpoint == 'admin_orders' %}class="active"{% endif %}>Orders</a>
-            <a href="{{ url_for('admin_subscribers') }}" {% if request.endpoint == 'admin_subscribers' %}class="active"{% endif %}>Subscribers</a>
-            <a href="{{ url_for('admin_catalog_images') }}" {% if request.endpoint == 'admin_catalog_images' %}class="active"{% endif %}>Catalog Images</a>
-            <span class="user-info">👤 {{ session.get('admin_username') }}</span>
-            <a href="{{ url_for('admin_logout') }}" class="logout-link">Logout</a>
-          {% elif session.get('user_logged_in') %}
-            <a href="{{ url_for('user_profile') }}" {% if request.endpoint == 'user_profile' %}class="active"{% endif %}>Profile</a>
-            <a href="{{ url_for('user_orders') }}" {% if request.endpoint == 'user_orders' %}class="active"{% endif %}>Orders</a>
-            <span class="user-info">👤 {{ session.get('user_name') }}</span>
-            <a href="{{ url_for('user_logout') }}" class="logout-link">Logout</a>
-          {% else %}
-            <a href="{{ url_for('user_login') }}" {% if request.endpoint == 'user_login' %}class="active"{% endif %}>Login</a>
-            <a href="{{ url_for('user_register') }}" {% if request.endpoint == 'user_register' %}class="active"{% endif %}>Register</a>
-            <a href="{{ url_for('admin_login') }}" {% if request.endpoint == 'admin_login' %}class="active"{% endif %}>Admin</a>
-          {% endif %}
-        </nav>
+      
+      <!-- ROW 1: Logo (Left) | User Info (Extreme Right) - NO WRAPPING -->
+      <div class="header-top-row" style="display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 0.5rem !important; width: 100% !important; margin-bottom: 0.5rem !important; flex-wrap: nowrap !important;">
+        <!-- Logo (Left) - Shrinks but doesn't wrap -->
+        <h1 style="margin: 0 !important; flex-shrink: 1 !important; min-width: 0 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; order: 1 !important;"><a href="{{ url_for('reset_filters') }}">🌱 Organic Gut Point</a></h1>
+        
+        <!-- User Badge & Cart & Logout (Extreme Right) - Fixed, never shrinks -->
+        {% if session.get('admin_logged_in') or session.get('user_logged_in') %}
+        <div class="header-user-section" style="display: flex !important; align-items: center !important; gap: 0.6rem !important; flex-shrink: 0 !important; white-space: nowrap !important; order: 2 !important;">
+          <a href="{{ url_for('cart') }}" style="background: rgba(255,255,255,0.2) !important; color: white !important; padding: 0.4rem 0.8rem !important; border-radius: 4px !important; text-decoration: none !important; font-weight: 500 !important; font-size: clamp(0.75rem, 0.9vw, 0.9rem) !important; white-space: nowrap !important; display: inline-block !important; border: none !important; cursor: pointer !important;">🛒 {{ (session.get('cart') or [])|length }}</a>
+          <div style="font-weight: 600 !important; color: white !important; font-size: clamp(0.8rem, 1vw, 0.95rem) !important; white-space: nowrap !important;">👤 {{ session.get('admin_username') or session.get('user_name') }}</div>
+          <a href="{{ url_for('admin_logout') if session.get('admin_logged_in') else url_for('user_logout') }}" style="background: #f44336 !important; color: white !important; padding: 0.4rem 0.8rem !important; border-radius: 4px !important; text-decoration: none !important; font-weight: 500 !important; font-size: clamp(0.75rem, 0.9vw, 0.9rem) !important; white-space: nowrap !important; display: inline-block !important; border: none !important; cursor: pointer !important;">Logout</a>
+        </div>
+        {% endif %}
       </div>
 
-      <!-- Row 2: Health and Wealth -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-        <span style="font-size: 1.2rem; font-weight: 900; color: white; letter-spacing: 1px; white-space: nowrap;">💰 WEALTH</span>
-        <span style="font-size: 1.2rem; font-weight: 900; color: white; letter-spacing: 1px; white-space: nowrap;">❤️ HEALTH</span>
-      </div>
+      <!-- ROW 2: Navigation - LOCKED SINGLE ROW, NO WRAPPING -->
+      <nav class="header-nav-primary" aria-label="Primary" style="display: flex !important; gap: 0.3rem !important; align-items: center !important; flex-wrap: nowrap !important; width: 100% !important; overflow-x: auto !important; margin-bottom: 0.5rem !important;">
+        <a href="{{ url_for('reset_filters') }}" class="nav-item{% if request.endpoint == 'index' or request.endpoint == 'reset_filters' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Home</a>
+        <a href="{{ url_for('category_view', category='gutcare') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'gutcare' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">🌿 Gut Care</a>
+        <a href="{{ url_for('category_view', category='corporate') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'corporate' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">🏢 Corporate</a>
+        <a href="{{ url_for('category_view', category='gifts') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'gifts' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">🎁 Gifts</a>
+        <a href="{{ url_for('community_home') }}" class="nav-item{% if request.endpoint == 'community_home' or 'community' in request.endpoint %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">💬 Community</a>
+        
+        {% if session.get('admin_logged_in') %}
+          <a href="{{ url_for('admin_products') }}" class="nav-item{% if 'admin_product' in request.endpoint %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">📦 Products</a>
+          <a href="{{ url_for('admin_orders') }}" class="nav-item{% if request.endpoint == 'admin_orders' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Orders</a>
+          <a href="{{ url_for('admin_subscribers') }}" class="nav-item{% if request.endpoint == 'admin_subscribers' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Subscribers</a>
+          <a href="{{ url_for('admin_catalog_images') }}" class="nav-item{% if request.endpoint == 'admin_catalog_images' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Catalog</a>
+          <a href="{{ url_for('admin_logout') }}" class="nav-item" style="display: inline-flex !important; flex-shrink: 0 !important; color: #d32f2f;">Logout</a>
+        {% elif session.get('user_logged_in') %}
+          <a href="{{ url_for('user_profile') }}" class="nav-item{% if request.endpoint == 'user_profile' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">👤 Profile</a>
+          <a href="{{ url_for('user_orders') }}" class="nav-item{% if request.endpoint == 'user_orders' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">📦 Orders</a>
+          <a href="{{ url_for('user_logout') }}" class="nav-item" style="display: inline-flex !important; flex-shrink: 0 !important; color: #d32f2f;">Logout</a>
+        {% else %}
+          <a href="{{ url_for('user_login') }}" class="nav-item{% if request.endpoint == 'user_login' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Login</a>
+          <a href="{{ url_for('user_register') }}" class="nav-item{% if request.endpoint == 'user_register' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Register</a>
+        {% endif %}
+      </nav>
     </div>
     
-    <!-- Row 2: Search Bar (right-aligned on mobile and desktop) -->
-    <div class="filter-section">
-      {% if request.endpoint in ('index', 'search') or 'index' in request.endpoint or 'search' in request.endpoint %}
-      <form class="site-search" id="site-search-form" action="{{ url_for('search') }}" method="get" role="search">
-        <input type="search" id="search-input" name="q" placeholder="🔍 Search products..." aria-label="Search products" value="{{ request.args.get('q','') }}" oninput="this.form.submit()">
+    <!-- ROW 3: Search & Filters (Combined, Professional Layout) -->
+    {% if request.endpoint in ('index', 'search') or 'index' in request.endpoint or 'search' in request.endpoint %}
+    <div class="search-filters-container">
+      <!-- Search Section -->
+      <form class="search-box-wrapper" id="site-search-form-mobile" action="{{ url_for('search') }}" method="get" role="search" aria-label="Search products">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="search" 
+          id="search-input-mobile" 
+          name="q" 
+          placeholder="Search products, categories, keywords..." 
+          aria-label="Search products" 
+          value="{{ request.args.get('q','') }}" 
+          class="search-input">
+        <button type="reset" id="clearSearch" class="clear-btn" style="display: none;">✕</button>
       </form>
-      {% endif %}
-    </div>
 
-    <!-- Row 3: Location & Status Filters (stacked on mobile) -->
-    <div class="filter-row" style="display: flex; gap: 0.8rem; width: 100%; padding: 0.8rem 1.2rem; align-items: center; flex-wrap: wrap;">
-      {% if request.endpoint in ('index', 'search') or 'index' in request.endpoint or 'search' in request.endpoint %}
-        <form class="region-select-row" action="{{ url_for('set_region') }}" method="post" aria-label="Choose region" style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 160px;">
-          <label for="region_id" style="color: white; font-weight: 600; white-space: nowrap; font-size: 0.9rem;">📍</label>
-          <select id="region_id" name="region_id" onchange="this.form.submit()" style="flex: 1; padding: 0.6rem 0.8rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.4); background: white; color: #0b1f2a; font-weight: 500; font-size: 0.9rem;">
-            <option value="">Location</option>
-            <option value="all" {% if current_region_id == 'all' %}selected{% endif %}>All Regions</option>
-            {% for r in regions %}
-            <option value="{{ r.id }}" {% if current_region_id == r.id %}selected{% endif %}>{{ r.name }}</option>
-            {% endfor %}
+      <!-- Filters Section -->
+      <div class="filters-wrapper">
+        <!-- Product Origin Filter -->
+        <form class="filter-form" action="{{ url_for('set_region') }}" method="post" aria-label="Choose product origin region">
+          <label for="region_id" class="filter-label">🌾 Origin Region</label>
+          <select id="region_id" name="region_id" onchange="this.form.submit()" class="filter-select">
+            <option value="" {% if not current_region_id %}selected{% endif %}>🚫 None</option>
+            <option value="all" {% if current_region_id == 'all' %}selected{% endif %}>📍 All Regions</option>
+            <optgroup label="Karnataka Regions">
+              {% for r in regions %}
+              <option value="{{ r.id }}" {% if current_region_id == r.id %}selected{% endif %}>{{ r.name }}</option>
+              {% endfor %}
+            </optgroup>
           </select>
         </form>
 
-        <form class="region-select-row" action="{{ url_for('set_product_status') }}" method="post" aria-label="Choose product status" style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 160px;">
-          <label for="product_status" style="color: white; font-weight: 600; white-space: nowrap; font-size: 0.9rem;">🌱</label>
-          <select id="product_status" name="product_status" onchange="this.form.submit()" style="flex: 1; padding: 0.6rem 0.8rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.4); background: white; color: #0b1f2a; font-weight: 500; font-size: 0.9rem;">
-            <option value="">Status</option>
-            <option value="Upcoming Harvest" {% if current_product_status == 'Upcoming Harvest' %}selected{% endif %}>Upcoming Harvest</option>
-            <option value="Harvest Complete" {% if current_product_status == 'Harvest Complete' %}selected{% endif %}>Harvest Complete</option>
-            <option value="Final Product" {% if current_product_status == 'Final Product' %}selected{% endif %}>Final Product</option>
+        <!-- Status Filter -->
+        <form class="filter-form" action="{{ url_for('set_product_status') }}" method="post" aria-label="Choose product status">
+          <label for="product_status" class="filter-label">🌱 Status</label>
+          <select id="product_status" name="product_status" onchange="this.form.submit()" class="filter-select">
+            <option value="" {% if not current_product_status %}selected{% endif %}>🚫 None</option>
+            <option value="all" {% if current_product_status == 'all' %}selected{% endif %}>📊 All Status</option>
+            <optgroup label="Harvest Status">
+              <option value="Upcoming Harvest" {% if current_product_status == 'Upcoming Harvest' %}selected{% endif %}>⏳ Upcoming Harvest</option>
+              <option value="Harvest Complete" {% if current_product_status == 'Harvest Complete' %}selected{% endif %}>✅ Harvest Complete</option>
+              <option value="Final Product" {% if current_product_status == 'Final Product' %}selected{% endif %}>📦 Final Product</option>
+            </optgroup>
           </select>
         </form>
-      {% endif %}
+
+        <!-- Clear Filters -->
+        <a href="{{ url_for('reset_filters') }}" class="clear-filters-btn">✕ Clear Filters</a>
+      </div>
     </div>
+    {% endif %}
   </header>
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
@@ -122,8 +147,87 @@
   {% endif %}
   {% endwith %}
   <script>
-    // Toggle filter section visibility to maintain consistent header height
+    // Auto-hide flash messages after 4 seconds
     document.addEventListener('DOMContentLoaded', function() {
+      const flashDiv = document.querySelector('.flash');
+      if (flashDiv) {
+        setTimeout(() => {
+          flashDiv.style.opacity = '0';
+          flashDiv.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => {
+            flashDiv.style.display = 'none';
+          }, 300);
+        }, 4000);
+      }
+      
+    // Enhanced Search & Filters Experience
+      const searchInput = document.getElementById('search-input-mobile');
+      const clearBtn = document.getElementById('clearSearch');
+      const searchForm = document.getElementById('site-search-form-mobile');
+      
+      // ========== SEARCH FUNCTIONALITY ==========
+      if (searchInput && clearBtn) {
+        // Show/hide clear button based on input
+        const updateClearBtn = function() {
+          clearBtn.style.display = searchInput.value.length > 0 ? 'block' : 'none';
+        };
+        
+        // Initial check
+        updateClearBtn();
+        
+        // Update on input
+        searchInput.addEventListener('input', updateClearBtn);
+        
+        // Clear button click handler
+        clearBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          searchInput.value = '';
+          searchInput.focus();
+          updateClearBtn();
+          if (searchForm) {
+            searchForm.submit();
+          }
+        });
+      }
+      
+      // Debounced search (800ms after user stops typing)
+      let searchTimeout;
+      if (searchInput && searchForm) {
+        searchInput.addEventListener('input', function() {
+          clearTimeout(searchTimeout);
+          if (this.value.length > 2) {
+            searchTimeout = setTimeout(() => {
+              searchForm.submit();
+            }, 800);
+          }
+        });
+      }
+      
+      // ========== FILTER INTERACTIONS ==========
+      const filterSelects = document.querySelectorAll('.filter-select');
+      
+      filterSelects.forEach(select => {
+        // Add focus styling
+        select.addEventListener('focus', function() {
+          this.style.borderColor = '#4caf50';
+        });
+        
+        // Remove focus styling
+        select.addEventListener('blur', function() {
+          // Only reset if no change was made
+          if (!this.changed) {
+            this.style.borderColor = '#ddd';
+          }
+        });
+        
+        // Track changes
+        select.addEventListener('change', function() {
+          this.changed = true;
+          this.style.borderColor = '#4caf50';
+        });
+      });
+      
+      // Filter section visibility toggle
       const isFilterPage = '{{ request.endpoint in ("index", "search") or "index" in request.endpoint or "search" in request.endpoint }}'.toLowerCase() === 'true';
       if (isFilterPage) {
         document.body.classList.add('filter-visible');

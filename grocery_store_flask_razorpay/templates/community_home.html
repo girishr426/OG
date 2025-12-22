@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="community-container" style="max-width: 900px; margin: 0 auto; padding: 2rem 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2 style="margin: 0;">💬 Community Forum</h2>
+    <a href="{{ url_for('create_community_post') }}" class="btn" style="background: #4caf50; color: white; padding: 0.7rem 1.5rem; text-decoration: none; border-radius: 6px; font-weight: 600;">
+      ✍️ New Post
+    </a>
+  </div>
+
+  <!-- Category Filter -->
+  <div style="margin-bottom: 2rem;">
+    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Filter by Category:</label>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      {% for cat in categories %}
+        <a href="{{ url_for('community_home', category=cat, page=1) }}" 
+           class="btn" 
+           style="padding: 0.5rem 1rem; border-radius: 20px; text-decoration: none; border: 2px solid {% if cat == current_category %}#4caf50{% else %}#ddd{% endif %}; background: {% if cat == current_category %}#4caf50{% else %}white{% endif %}; color: {% if cat == current_category %}white{% else %}#333{% endif %}; cursor: pointer; transition: 0.3s;">
+          {{ cat }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Posts List -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    {% if posts %}
+      {% for post in posts %}
+        <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: box-shadow 0.3s;">
+          <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+            <div style="flex: 1;">
+              {% if post['is_featured'] %}
+                <span style="display: inline-block; background: #ff9800; color: white; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">⭐ Featured</span>
+              {% endif %}
+              <h3 style="margin: 0.5rem 0 0.3rem 0;">
+                <a href="{{ url_for('community_post', post_id=post['id']) }}" style="color: #0066cc; text-decoration: none;">
+                  {{ post['title'] }}
+                </a>
+              </h3>
+              <div style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                by <strong>{{ post['author_name'] }}</strong> 
+                <span style="color: #999;">• {{ post['created_at'][:10] }}</span>
+              </div>
+              <span style="display: inline-block; background: #f0f0f0; color: #333; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.85rem;">
+                {{ post['category'] }}
+              </span>
+            </div>
+          </div>
+          
+          <p style="color: #555; margin: 1rem 0; line-height: 1.5;">{{ post['body'][:200] }}{% if post['body']|length > 200 %}...{% endif %}</p>
+          
+          <div style="display: flex; gap: 1rem; color: #999; font-size: 0.9rem;">
+            <span>❤️ {{ post['likes_count'] }} likes</span>
+            <span>💬 {{ post['comments_count'] }} comments</span>
+            <a href="{{ url_for('community_post', post_id=post['id']) }}" style="color: #0066cc; text-decoration: none;">View Discussion →</a>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align: center; padding: 3rem 1rem; color: #999;">
+        <p style="font-size: 1.1rem;">No posts found in this category yet.</p>
+        <p><a href="{{ url_for('create_community_post') }}" style="color: #4caf50; text-decoration: none; font-weight: 600;">Be the first to create one! ✍️</a></p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+    <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+      {% if current_page > 1 %}
+        <a href="{{ url_for('community_home', category=current_category, page=1) }}" class="btn" style="padding: 0.5rem 0.8rem; border: 1px solid #ddd; background: white; text-decoration: none; border-radius: 4px;">« First</a>
+        <a href="{{ url_for('community_home', category=current_category, page=current_page-1) }}" class="btn" style="padding: 0.5rem 0.8rem; border: 1px solid #ddd; background: white; text-decoration: none; border-radius: 4px;">‹ Prev</a>
+      {% endif %}
+      
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == current_page %}
+          <span style="padding: 0.5rem 0.8rem; background: #4caf50; color: white; border-radius: 4px; font-weight: 600;">{{ p }}</span>
+        {% elif p >= current_page - 2 and p <= current_page + 2 %}
+          <a href="{{ url_for('community_home', category=current_category, page=p) }}" class="btn" style="padding: 0.5rem 0.8rem; border: 1px solid #ddd; background: white; text-decoration: none; border-radius: 4px;">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+      
+      {% if current_page < total_pages %}
+        <a href="{{ url_for('community_home', category=current_category, page=current_page+1) }}" class="btn" style="padding: 0.5rem 0.8rem; border: 1px solid #ddd; background: white; text-decoration: none; border-radius: 4px;">Next ›</a>
+        <a href="{{ url_for('community_home', category=current_category, page=total_pages) }}" class="btn" style="padding: 0.5rem 0.8rem; border: 1px solid #ddd; background: white; text-decoration: none; border-radius: 4px;">Last »</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

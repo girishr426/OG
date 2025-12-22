@@ -415,7 +415,7 @@
           {% endif %}
         </button>
       </form>
-      <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Products</a>
+      <a href="{{ request.referrer or url_for('index') }}" class="btn btn-secondary">← Back</a>
     </div>
   </div>
 </div>

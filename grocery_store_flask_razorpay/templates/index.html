@@ -1,8 +1,113 @@
 {% extends 'base.html' %}
 {% block content %}
-<!-- Hero Section with Farmers and Customer Images - Only show when NO filters are applied -->
-{% if not session.get('region_id') and not session.get('product_status') %}
+<!-- Hero Section with Auto-Scrolling Image Carousel - Only show on homepage (root page, no region/status filters) -->
+{% if request.endpoint == 'index' and not session.get('region_id') and not session.get('product_status') %}
 <section class="hero-section">
+  {% if catalog_images.get('hero') and catalog_images['hero']|length > 0 %}
+  <!-- Carousel with Real Catalog Images -->
+  <div class="hero-carousel" id="heroCarousel">
+    <div class="carousel-container">
+      <div class="carousel-track" id="carouselTrack">
+        {% for img in catalog_images['hero'] %}
+        <div class="carousel-slide">
+          <img src="{{ url_for('static', filename=img.path) }}" alt="{{ img.alt }}" class="carousel-image" loading="lazy" decoding="async">
+          <div class="carousel-overlay"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Carousel Indicators (Dots Navigation) - Show only if more than 1 image -->
+    {% if catalog_images['hero']|length > 1 %}
+    <div class="carousel-indicators" id="indicators">
+      {% for img in catalog_images['hero'] %}
+      <button class="indicator {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" aria-label="Go to slide {{ loop.index }}">●</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+  </div>
+  
+  <!-- Hero Carousel JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const carousel = document.getElementById('heroCarousel');
+      const track = document.getElementById('carouselTrack');
+      const indicators = document.querySelectorAll('.indicator');
+      
+      if (!carousel || !track) return;
+      
+      const totalSlides = {{ catalog_images['hero']|length }};
+      let currentIndex = 0;
+      let autoScrollInterval;
+      
+      // Update carousel position
+      function updateCarousel() {
+        const offset = -currentIndex * 100;
+        track.style.transform = `translateX(${offset}%)`;
+        
+        // Update indicators
+        indicators.forEach((indicator, idx) => {
+          indicator.classList.toggle('active', idx === currentIndex);
+        });
+      }
+      
+      // Go to specific slide
+      function goToSlide(index) {
+        currentIndex = (index + totalSlides) % totalSlides;
+        updateCarousel();
+        resetAutoScroll();
+      }
+      
+      // Next slide
+      function nextSlide() {
+        goToSlide(currentIndex + 1);
+      }
+      
+      // Previous slide
+      function prevSlide() {
+        goToSlide(currentIndex - 1);
+      }
+      
+      // Auto scroll function
+      function startAutoScroll() {
+        autoScrollInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
+      }
+      
+      // Reset auto scroll timer
+      function resetAutoScroll() {
+        clearInterval(autoScrollInterval);
+        startAutoScroll();
+      }
+      
+      // Event listeners for indicators
+      indicators.forEach((indicator, idx) => {
+        indicator.addEventListener('click', () => goToSlide(idx));
+      });
+      
+      // Stop auto-scroll on hover, resume on mouse leave
+      carousel.addEventListener('mouseenter', () => {
+        clearInterval(autoScrollInterval);
+      });
+      
+      carousel.addEventListener('mouseleave', () => {
+        startAutoScroll();
+      });
+      
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (!carousel.matches(':hover')) return;
+        if (e.key === 'ArrowLeft') prevSlide();
+        if (e.key === 'ArrowRight') nextSlide();
+      });
+      
+      // Initialize
+      updateCarousel();
+      startAutoScroll();
+    });
+  </script>
+  {% else %}
+  <!-- Fallback Hero Section with Illustrations -->
   <div class="hero-container">
     <!-- Left: Farmer Image -->
     <div class="hero-image-wrapper hero-left">
@@ -63,6 +168,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </section>
 {% endif %}
 
@@ -109,7 +215,7 @@
 
 <div style="position: relative;">
 
-<h2 style="margin: 1rem 0;">{{ 'New Products' if is_homepage else 'Products' }}</h2>
+<h2 style="margin: 1rem 0;">{{ title }}</h2>
 
 <!-- Product Count & Sort -->
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem;">
@@ -118,10 +224,9 @@
     Showing <strong>{{ ((current_page - 1) * 12) + 1 }}-{{ [current_page * 12, total_products] | min }}</strong> of <strong>{{ total_products }}</strong> products
   </div>
   {% endif %}
-  <form method="get" action="{{ url_for('search') if is_search_result else url_for('index') }}" style="display:flex; align-items:center; gap:0.5rem;">
-    {% if is_search_result %}
-      <input type="hidden" name="q" value="{{ search_query }}">
-    {% endif %}
+  <!-- Sort by - Only show on homepage -->
+  {% if is_homepage %}
+  <form method="get" action="{{ url_for('index') }}" style="display:flex; align-items:center; gap:0.5rem;">
     <label for="sort" style="color:#666; white-space:nowrap;">Sort by:</label>
     <select id="sort" name="sort" onchange="this.form.submit()" style="padding:0.4rem 0.6rem; border:1px solid #ddd; border-radius:6px;">
       <option value="new" {% if sort=='new' %}selected{% endif %}>Newest</option>
@@ -130,14 +235,18 @@
       <option value="name_az" {% if sort=='name_az' %}selected{% endif %}>Name: A → Z</option>
     </select>
   </form>
+  {% endif %}
 </div>
 
 <div class="grid">
   {% for p in products %}
   <div class="card">
+    <!-- Product Image -->
     {% if p.image_path %}
     <div class="product-img-wrapper">
-      <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.name }}" class="product-image" loading="lazy" decoding="async">
+      <a href="{{ url_for('product_detail', pid=p.id) }}">
+        <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.name }}" class="product-image" loading="lazy" decoding="async">
+      </a>
       {% if p.id in new_product_ids %}
       <span class="new-badge">New</span>
       {% endif %}
@@ -147,29 +256,33 @@
       {% endif %}
     </div>
     {% endif %}
-    <h3><a href="{{ url_for('product_detail', pid=p.id) }}">{{ p.name }}</a></h3>
-    {% set rs = review_stats_map.get(p.id) if review_stats_map else None %}
-    {% if rs and rs.total > 0 %}
-    <div class="rating-row" title="{{ rs.avg_rating }} average from {{ rs.total }} ratings" style="display:flex; align-items:center; gap:0.4rem; color:#f59e0b; font-weight:600;">
-      <span>
-        {% for i in range(1,6) %}{% if i <= rs.avg_rating|round(0, 'floor') %}★{% else %}☆{% endif %}{% endfor %}
-      </span>
-      <span style="color:#333; font-weight:700;">{{ '%.1f'|format(rs.avg_rating) }}</span>
-      <span style="color:#777; font-size:0.9rem;">({{ rs.total }})</span>
-    </div>
+    
+    <!-- Product Name (Minimal) -->
+    <h3 style="margin: 0.5rem 0; font-size: 0.95rem; font-weight: 600; line-height: 1.3;">
+      <a href="{{ url_for('product_detail', pid=p.id) }}" style="text-decoration: none; color: #333;">{{ p.name }}</a>
+    </h3>
+    
+    <!-- Product Size (Minimal) -->
+    {% if p.size and p.size != 'Standard' %}
+    <p style="margin: 0.2rem 0; font-size: 0.85rem; color: #666;">{{ p.size }}</p>
     {% endif %}
+    
+    <!-- Price (Minimal) -->
     {% if p.mrp is not none and p.mrp > p.price %}
-      <p class="price">
-        <span style="color:#4CAF50; font-weight:700;">₹{{ '%.2f'|format(p.price) }}</span>
-        <span style="color:#999; text-decoration: line-through; margin-left: 0.4rem;">₹{{ '%.2f'|format(p.mrp) }}</span>
+      <p style="margin: 0.3rem 0; font-size: 0.9rem;">
+        <span style="color: #4CAF50; font-weight: 700; font-size: 1rem;">₹{{ '%.0f'|format(p.price) }}</span>
+        <span style="color: #999; text-decoration: line-through; font-size: 0.85rem; margin-left: 0.3rem;">₹{{ '%.0f'|format(p.mrp) }}</span>
       </p>
     {% else %}
-      <p class="price">₹{{ '%.2f'|format(p.price) }}</p>
+      <p style="margin: 0.3rem 0; font-size: 1rem; font-weight: 700; color: #333;">₹{{ '%.0f'|format(p.price) }}</p>
     {% endif %}
-    <p>{{ p.description }}</p>
-    <p class="meta">Estimated delivery: {{ p.estimated_delivery_date or 'in ' ~ (p.estimated_delivery_days or 2) ~ ' day(s)' }}</p>
-    <form action="{{ url_for('add_to_cart', pid=p.id) }}" method="get">
-      <button {% if p.stock <= 0 %}disabled title="Out of Stock"{% endif %}>{{ 'Add to Cart' if p.stock > 0 else 'Out of Stock' }}</button>
+    
+    <!-- Add to Cart Button -->
+    <form action="{{ url_for('add_to_cart', pid=p.id) }}" method="get" style="margin-top: 0.5rem;">
+      <button style="width: 100%; padding: 0.5rem; font-size: 0.85rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;" 
+              {% if p.stock <= 0 %}disabled style="background: #ccc; cursor: not-allowed;" title="Out of Stock"{% endif %}>
+        {{ 'Add to Cart' if p.stock > 0 else 'Out of Stock' }}
+      </button>
     </form>
   </div>
   {% endfor %}
@@ -220,5 +333,138 @@
   {% endif %}
 </nav>
 {% endif %}
+
+</div>
+
+<!-- Gut Care Products Carousel Section (Only on Homepage with Newest sort) -->
+{% if gutcare_carousel_products and is_homepage and sort == 'new' %}
+<section style="margin-top: 3rem; padding: 2rem 1rem; background: linear-gradient(135deg, rgba(139, 69, 19, 0.03) 0%, rgba(210, 180, 140, 0.02) 100%);">
+  <!-- Section Header -->
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <h2 style="margin: 0 0 0.5rem 0; font-size: 1.8rem; color: #1a1a1a; font-weight: 700;">🌿 Gut Care & Wellness</h2>
+    <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.95rem;">Premium products for digestive health</p>
+  </div>
+
+  <!-- Horizontal Scrolling Carousel -->
+  <div style="position: relative; margin: 0 -1rem;">
+    <!-- Scroll Container -->
+    <div style="overflow-x: auto; scroll-behavior: smooth; padding: 0 1rem; scrollbar-width: thin;" id="gutcareScroll">
+      <div style="display: flex; gap: 1.2rem; min-width: min-content; padding: 0;">
+        {% for product in gutcare_carousel_products %}
+        <!-- Product Card -->
+        <a href="{{ url_for('product_detail', pid=product.id) }}" 
+           style="flex: 0 0 200px; text-decoration: none; color: inherit; display: flex; flex-direction: column; background: white; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s ease;">
+          
+          <!-- Product Image -->
+          <div style="width: 100%; height: 200px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            {% if product.image_path %}
+            <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}" 
+                 style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+            <div style="font-size: 3rem; color: #ddd;">🌱</div>
+            {% endif %}
+          </div>
+
+          <!-- Product Info -->
+          <div style="padding: 1rem; flex: 1; display: flex; flex-direction: column;">
+            <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #1a1a1a; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ product.name }}</p>
+            {% if product.size and product.size != 'Standard' %}
+            <p style="margin: 0 0 0.3rem 0; font-size: 0.8rem; color: #666;">{{ product.size }}</p>
+            {% endif %}
+            <p style="margin: 0; color: #2ea043; font-weight: 700; font-size: 1rem;">₹{{ '%.0f'|format(product.price) }}</p>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Scroll Navigation Buttons -->
+    <button onclick="document.getElementById('gutcareScroll').scrollBy({left: -300, behavior: 'smooth'})" 
+            style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: #1f6f2f; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #ffffff; z-index: 10; box-shadow: 0 2px 8px rgba(31, 111, 47, 0.3); transition: all 0.2s ease; font-weight: bold; line-height: 1;"
+            onmouseover="this.style.boxShadow='0 4px 12px rgba(31, 111, 47, 0.5)'"
+            onmouseout="this.style.boxShadow='0 2px 8px rgba(31, 111, 47, 0.3)'"
+            aria-label="Scroll left">
+      &lt;
+    </button>
+
+    <button onclick="document.getElementById('gutcareScroll').scrollBy({left: 300, behavior: 'smooth'})" 
+            style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: #1f6f2f; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #ffffff; z-index: 10; box-shadow: 0 2px 8px rgba(31, 111, 47, 0.3); transition: all 0.2s ease; font-weight: bold; line-height: 1;"
+            onmouseover="this.style.boxShadow='0 4px 12px rgba(31, 111, 47, 0.5)'"
+            onmouseout="this.style.boxShadow='0 2px 8px rgba(31, 111, 47, 0.3)'"
+            aria-label="Scroll right">
+      &gt;
+    </button>
+  </div>
+
+  <!-- View All Gut Care Products Link -->
+  <div style="text-align: center; margin-top: 1.5rem;">
+    <a href="{{ url_for('category_view', category='gutcare') }}" 
+       style="display: inline-block; padding: 0.8rem 1.5rem; background: #1f6f2f; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(31, 111, 47, 0.3);">
+      View All Gut Care Products →
+    </a>
+  </div>
+</section>
+{% endif %}
+
+<!-- Carousel Control Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const carouselTrack = document.getElementById('carouselTrack');
+  const indicators = document.querySelectorAll('.indicator');
+  
+  if (!carouselTrack || indicators.length === 0) return; // No carousel to control
+  
+  let currentIndex = 0;
+  const slideCount = indicators.length;
+  let autoScrollInterval;
+  
+  // Update active indicator
+  function updateIndicators() {
+    indicators.forEach((ind, idx) => {
+      ind.classList.toggle('active', idx === currentIndex % slideCount);
+    });
+  }
+  
+  // Move to specific slide
+  function goToSlide(index) {
+    currentIndex = index;
+    const offset = -(currentIndex * 100);
+    carouselTrack.style.animation = 'none';
+    carouselTrack.style.transform = `translateX(${offset}%)`;
+    updateIndicators();
+    resetAutoScroll();
+  }
+  
+  // Next slide
+  function nextSlide() {
+    currentIndex = (currentIndex + 1) % slideCount;
+    goToSlide(currentIndex);
+  }
+  
+  // Auto-scroll functionality
+  function startAutoScroll() {
+    autoScrollInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
+  }
+  
+  function resetAutoScroll() {
+    clearInterval(autoScrollInterval);
+    startAutoScroll();
+  }
+  
+  // Indicator click handlers (dots navigation)
+  indicators.forEach((ind, idx) => {
+    ind.addEventListener('click', () => goToSlide(idx));
+  });
+  
+  // Pause on hover
+  const carousel = document.querySelector('.hero-carousel');
+  carousel.addEventListener('mouseenter', () => clearInterval(autoScrollInterval));
+  carousel.addEventListener('mouseleave', resetAutoScroll);
+  
+  // Initialize
+  updateIndicators();
+  startAutoScroll();
+});
+</script>
 
 {% endblock %}

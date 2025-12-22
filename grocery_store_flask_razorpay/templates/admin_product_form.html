@@ -11,6 +11,9 @@
     <label>Price <span style="color: #c62828;">*</span>
       <input type="number" step="0.01" name="price" value="{{ product.price if product else '' }}" required placeholder="e.g., 599.00">
     </label>
+    <label>Size <small style="color:#666; font-weight:500;">(e.g., 500g, 1kg, etc.)</small>
+      <input type="text" name="size" value="{{ product.size if product and product.size else 'Standard' }}" placeholder="e.g., 500g">
+    </label>
   </div>
   <label>Stock<input type="number" name="stock" value="{{ product.stock if product else 0 }}" required></label>
   
@@ -19,6 +22,15 @@
       <option value="Upcoming Harvest" {% if product and product.product_status == 'Upcoming Harvest' %}selected{% endif %}>Upcoming Harvest</option>
       <option value="Harvest Complete" {% if product and product.product_status == 'Harvest Complete' %}selected{% endif %}>Harvest Complete</option>
       <option value="Final Product" {% if product and (not product or product.product_status == 'Final Product') %}selected{% endif %}>Final Product</option>
+    </select>
+  </label>
+
+  <label>Product Category <span style="color: #c62828;">*</span>
+    <select name="category" required>
+      <option value="Products" {% if product and product.category == 'Products' %}selected{% endif %}>📦 Products</option>
+      <option value="gutcare" {% if product and product.category == 'gutcare' or product and product.category == 'Gut Care' %}selected{% endif %}>🌿 Gut Care</option>
+      <option value="corporate" {% if product and product.category == 'corporate' or product and product.category == 'Corporate' %}selected{% endif %}>🏢 Corporate</option>
+      <option value="gifts" {% if product and product.category == 'gifts' or product and product.category == 'Gifts' %}selected{% endif %}>🎁 Gifts</option>
     </select>
   </label>
   
