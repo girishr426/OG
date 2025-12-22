@@ -1,34 +1,45 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Your Cart</h2>
+<h2 style="margin-bottom: 1rem;">🛒 Your Cart</h2>
 {% if cart %}
-<form method="post">
-<div class="cart-items">
-  {% for item in cart %}
-  <div class="cart-item">
-    <div class="cart-item-details">
-      <div class="cart-item-name">{{ item.name }}</div>
-      <div class="cart-item-price">₹{{ '%.2f'|format(item.price) }}</div>
+<form method="post" style="margin-bottom: 1rem;">
+  <div class="cart-items">
+    {% for item in cart %}
+    <div class="cart-item">
+      <div class="cart-item-details">
+        <div class="cart-item-name">{{ item.name }}</div>
+        <div class="cart-item-price">₹{{ '%.2f'|format(item.price) }}</div>
+      </div>
+      <div class="cart-item-qty">
+        <input type="number" min="1" name="qty_{{ item.id }}" value="{{ item.quantity }}" class="qty-input" aria-label="Quantity for {{ item.name }}">
+      </div>
+      <div class="cart-item-subtotal">
+        <div style="font-weight: 700; color: #222;">₹{{ '%.2f'|format(item.price * item.quantity) }}</div>
+        <a href="{{ url_for('remove_from_cart', pid=item.id) }}" class="btn-small danger" onclick="return confirm('Remove {{ item.name }}?')" title="Remove item">Remove</a>
+      </div>
     </div>
-    <div class="cart-item-qty">
-      <input type="number" min="1" name="qty_{{ item.id }}" value="{{ item.quantity }}" class="qty-input">
-    </div>
-    <div class="cart-item-subtotal">
-      <div>₹{{ '%.2f'|format(item.price * item.quantity) }}</div>
-      <a href="{{ url_for('remove_from_cart', pid=item.id) }}" class="btn-small danger" onclick="return confirm('Remove?')">Remove</a>
-    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
-<div class="cart-summary">
-  <strong>Total: ₹{{ '%.2f'|format(total) }}</strong>
-</div>
-<div class="actions">
-  <button type="submit">Update Cart</button>
-  <a class="btn" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
-</div>
+
+  <div class="cart-summary">
+    <div style="margin-bottom: 0.8rem;">Total Amount</div>
+    <div style="font-size: 1.4rem;">₹{{ '%.2f'|format(total) }}</div>
+  </div>
+
+  <div class="actions" style="flex-direction: column; gap: 0.8rem; margin-bottom: 1rem;">
+    <button type="submit" style="background: #ff9500; width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700;">
+      ✏️ Update Cart
+    </button>
+    <a class="btn" href="{{ url_for('checkout') }}" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700; text-align: center; display: block; background: #4CAF50;">
+      ✅ Proceed to Checkout
+    </a>
+  </div>
 </form>
 {% else %}
-<p>Your cart is empty.</p>
+<div style="text-align: center; padding: 2rem 1rem;">
+  <div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div>
+  <p style="font-size: 1.1rem; color: #666; margin: 1rem 0;">Your cart is empty.</p>
+  <a class="btn" href="{{ url_for('reset_filters') }}" style="padding: 0.8rem 1.5rem;">← Continue Shopping</a>
+</div>
 {% endif %}
 {% endblock %}

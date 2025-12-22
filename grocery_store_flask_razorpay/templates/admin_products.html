@@ -303,6 +303,18 @@
     </div>
     
     <div class="filter-group">
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
+            {{ cat }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="filter-group">
       <label for="region">Region</label>
       <select id="region" name="region">
         <option value="">All Regions</option>
@@ -316,7 +328,7 @@
     
     <div class="filter-buttons">
       <button type="submit" class="btn" style="margin: 0;">🔍 Filter</button>
-      {% if search_query or selected_region %}
+      {% if search_query or selected_region or selected_category %}
         <a href="{{ url_for('admin_products') }}" class="btn secondary">✕ Clear</a>
       {% endif %}
     </div>

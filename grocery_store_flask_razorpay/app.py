@@ -319,8 +319,21 @@ def get_db():
 
 
 def init_db():
+    """Initialize database with schema and run migrations if needed."""
     conn = get_db()
     cur = conn.cursor()
+    
+    # Create schema_version table first (for tracking applied migrations)
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS schema_version (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            version INTEGER NOT NULL UNIQUE,
+            description TEXT,
+            applied_at TEXT NOT NULL,
+            status TEXT DEFAULT 'applied'
+        )
+    ''')
+    
     cur.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -333,7 +346,8 @@ def init_db():
             estimated_delivery_date TEXT,
             image_path TEXT,
             is_homepage INTEGER DEFAULT 0,
-            product_status TEXT DEFAULT 'Final Product'
+            product_status TEXT DEFAULT 'Final Product',
+            category TEXT DEFAULT 'Products'
         )
     ''')
     # Backfill migration: add mrp column if missing in existing DBs
@@ -342,6 +356,12 @@ def init_db():
         col_names = {c[1] for c in cols}
         if 'mrp' not in col_names:
             cur.execute('ALTER TABLE products ADD COLUMN mrp REAL')
+            conn.commit()
+        if 'category' not in col_names:
+            cur.execute('ALTER TABLE products ADD COLUMN category TEXT DEFAULT "Products"')
+            conn.commit()
+        if 'size' not in col_names:
+            cur.execute('ALTER TABLE products ADD COLUMN size TEXT DEFAULT "Standard"')
             conn.commit()
     except Exception:
         pass
@@ -483,6 +503,49 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     ''')
+    # Community features: Posts, Comments, Likes
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS community_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            category TEXT DEFAULT 'General',
+            likes_count INTEGER DEFAULT 0,
+            comments_count INTEGER DEFAULT 0,
+            is_featured INTEGER DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS community_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            body TEXT NOT NULL,
+            likes_count INTEGER DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY(post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS community_likes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER,
+            comment_id INTEGER,
+            user_id INTEGER NOT NULL,
+            created_at TEXT,
+            UNIQUE(post_id, user_id),
+            UNIQUE(comment_id, user_id),
+            FOREIGN KEY(post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+            FOREIGN KEY(comment_id) REFERENCES community_comments(id) ON DELETE CASCADE,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
     # Seed default admin if not exists
     cur.execute('SELECT COUNT(*) as c FROM admin_users')
     if cur.fetchone()['c'] == 0:
@@ -496,16 +559,6 @@ def init_db():
             'admin', generate_password_hash(default_admin_password)
         ))
     
-    # Seed sample products if none
-    cur.execute('SELECT COUNT(*) as c FROM products')
-    if cur.fetchone()['c'] == 0:
-        sample = [
-            ('Basmati Rice 5kg', 'Premium aged basmati rice', 599.0, 699.0, 50, 2, None, 'product_images/rice.jpg'),
-            ('Fresh Milk 1L', 'Pasteurized toned milk', 54.0, 60.0, 100, 1, None, 'product_images/milk.jpg'),
-            ('Organic Eggs (12)', 'Free-range organic eggs', 99.0, 120.0, 80, 2, None, 'product_images/eggs.jpg'),
-            ('Tomatoes 1kg', 'Farm-fresh tomatoes', 30.0, 40.0, 150, 1, None, 'product_images/tomatoes.jpg'),
-        ]
-        cur.executemany('INSERT INTO products (name, description, price, mrp, stock, estimated_delivery_days, estimated_delivery_date, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', sample)
     conn.commit()
     # Seed Karnataka regions if none
     cur = conn.cursor()
@@ -523,6 +576,65 @@ def init_db():
         ]
         cur.executemany('INSERT INTO regions (name, state) VALUES (?, ?)', karnataka_regions)
         conn.commit()
+    
+    # Track applied migrations (v1 = initial setup with schema)
+    cur.execute('SELECT MAX(version) as max_v FROM schema_version')
+    result = cur.fetchone()
+    max_version = result['max_v'] if result['max_v'] else 0
+    
+    # v1: Initial schema (all tables created above)
+    if max_version < 1:
+        try:
+            cur.execute('INSERT INTO schema_version (version, description, applied_at, status) VALUES (?, ?, ?, ?)',
+                       (1, 'Initial schema with all tables and columns', datetime.now().isoformat(), 'applied'))
+            conn.commit()
+        except Exception:
+            pass
+    
+    # v2: MRP column (already added above in backfill, but track it)
+    if max_version < 2:
+        try:
+            cols = cur.execute("PRAGMA table_info(products)").fetchall()
+            col_names = {c[1] for c in cols}
+            if 'mrp' not in col_names:
+                cur.execute('ALTER TABLE products ADD COLUMN mrp REAL')
+            cur.execute('INSERT INTO schema_version (version, description, applied_at, status) VALUES (?, ?, ?, ?)',
+                       (2, 'Added MRP column to products table', datetime.now().isoformat(), 'applied'))
+            conn.commit()
+        except Exception:
+            pass
+    
+    # v3: Size column
+    if max_version < 3:
+        try:
+            cols = cur.execute("PRAGMA table_info(products)").fetchall()
+            col_names = {c[1] for c in cols}
+            if 'size' not in col_names:
+                cur.execute('ALTER TABLE products ADD COLUMN size TEXT DEFAULT "Standard"')
+            cur.execute('INSERT INTO schema_version (version, description, applied_at, status) VALUES (?, ?, ?, ?)',
+                       (3, 'Added size column to products table', datetime.now().isoformat(), 'applied'))
+            conn.commit()
+        except Exception:
+            pass
+    
+    # v4: Catalog images table
+    if max_version < 4:
+        try:
+            cur.execute('INSERT INTO schema_version (version, description, applied_at, status) VALUES (?, ?, ?, ?)',
+                       (4, 'Created catalog_images table for hero carousel', datetime.now().isoformat(), 'applied'))
+            conn.commit()
+        except Exception:
+            pass
+    
+    # v5: Product images table
+    if max_version < 5:
+        try:
+            cur.execute('INSERT INTO schema_version (version, description, applied_at, status) VALUES (?, ?, ?, ?)',
+                       (5, 'Created product_images table for product gallery', datetime.now().isoformat(), 'applied'))
+            conn.commit()
+        except Exception:
+            pass
+    
     conn.close()
 
 
@@ -654,30 +766,36 @@ def index():
     PRODUCTS_PER_PAGE = 12
     
     if region_id == 'all':
-        # "All Regions" selected: show all products
-        all_products = conn.execute(SQL_SELECT_PRODUCTS_ORDERED).fetchall()
+        # "All Regions" selected: show all products EXCEPT special categories
+        all_products = conn.execute('SELECT * FROM products WHERE category = "Products" ORDER BY id DESC').fetchall()
         page_title = 'All Products'
     elif region_id:
-        # Show products available in selected region OR globally available (no mappings)
+        # Show products available in selected region OR globally available (no mappings) - EXCEPT special categories
         all_products = conn.execute('''
             SELECT p.* FROM products p
-            WHERE NOT EXISTS (SELECT 1 FROM product_regions pr WHERE pr.product_id = p.id)
-               OR EXISTS (SELECT 1 FROM product_regions pr WHERE pr.product_id = p.id AND pr.region_id = ?)
+            WHERE p.category = "Products"
+              AND (NOT EXISTS (SELECT 1 FROM product_regions pr WHERE pr.product_id = p.id)
+               OR EXISTS (SELECT 1 FROM product_regions pr WHERE pr.product_id = p.id AND pr.region_id = ?))
             ORDER BY p.id DESC
         ''', (region_id,)).fetchall()
     else:
-        # No region selected: show homepage products if any exist, otherwise show all
-        homepage_products = conn.execute('SELECT p.* FROM products p WHERE p.is_homepage = 1 ORDER BY p.id DESC').fetchall()
-        if homepage_products:
-            all_products = homepage_products
-            is_homepage = True
-            page_title = 'New Products'
+        # No region selected: show homepage products if sorting is 'new', otherwise show all Products
+        if sort == 'new':
+            homepage_products = conn.execute('SELECT p.* FROM products p WHERE p.is_homepage = 1 AND p.category = "Products" ORDER BY p.id DESC').fetchall()
+            if homepage_products:
+                all_products = homepage_products
+                is_homepage = True
+                page_title = 'New Products'
+            else:
+                # Fallback: show Products category items only
+                all_products = conn.execute('SELECT * FROM products WHERE category = "Products" ORDER BY id DESC').fetchall()
         else:
-            # Fallback: show all products if no homepage products defined
-            all_products = conn.execute(SQL_SELECT_PRODUCTS_ORDERED).fetchall()
+            # When sorting by price or name, show ALL products
+            all_products = conn.execute('SELECT * FROM products WHERE category = "Products" ORDER BY id DESC').fetchall()
+            page_title = 'Products'
     
-    # Filter by product status if selected
-    if product_status:
+    # Filter by product status if selected (but not if 'all' is selected)
+    if product_status and product_status != 'all':
         all_products = [p for p in all_products if p['product_status'] == product_status]
     # Sorting like marketplace UX
     if sort == 'price_low':
@@ -706,6 +824,36 @@ def index():
     # Mark first 4 products as "new"
     new_product_ids = {p['id'] for p in all_products[:4]}
     
+    # Get all products grouped by category for quick reference section
+    conn = get_db()
+    all_categories_products = {}
+    categories_info = [
+        ('Products', '🌾 Organic Products'),
+        ('gutcare', '🌿 Gut Care'),
+        ('corporate', '🏢 Corporate'),
+        ('gifts', '🎁 Gifts')
+    ]
+    for category_key, category_label in categories_info:
+        products_in_cat = conn.execute(
+            'SELECT id, name, price, image_path FROM products WHERE category = ? ORDER BY id DESC LIMIT 8',
+            (category_key,)
+        ).fetchall()
+        if products_in_cat:
+            all_categories_products[category_key] = {
+                'label': category_label,
+                'products': products_in_cat
+            }
+    
+    # Fetch Gut Care products for carousel (only when viewing newest products on homepage)
+    gutcare_carousel_products = []
+    if is_homepage and sort == 'new':
+        gutcare_carousel_products = conn.execute(
+            'SELECT id, name, price, image_path FROM products WHERE LOWER(category) = ? ORDER BY id DESC LIMIT 12',
+            ('gutcare',)
+        ).fetchall()
+    
+    conn.close()
+    
     return render_template('index.html', 
                          products=products, 
                          new_product_ids=new_product_ids, 
@@ -715,7 +863,72 @@ def index():
                          total_pages=total_pages,
                          total_products=total_products,
                          review_stats_map=review_stats_map,
+                         sort=sort,
+                         all_categories_products=all_categories_products,
+                         gutcare_carousel_products=gutcare_carousel_products)
+
+@app.route('/category/<category>')
+def category_view(category):
+    """View products by category: gutcare, corporate, gifts"""
+    conn = get_db()
+    category_lower = category.lower()
+    
+    # Validate category
+    valid_categories = ['gutcare', 'corporate', 'gifts']
+    if category_lower not in valid_categories:
+        return redirect(url_for('index'))
+    
+    page = request.args.get('page', 1, type=int)
+    sort = request.args.get('sort', 'new')
+    if page < 1:
+        page = 1
+    
+    PRODUCTS_PER_PAGE = 12
+    
+    # Get products for this category
+    all_products = conn.execute(
+        'SELECT * FROM products WHERE LOWER(category) = ? ORDER BY id DESC',
+        (category_lower,)
+    ).fetchall()
+    
+    # Apply sorting
+    if sort == 'price_low':
+        all_products = sorted(all_products, key=lambda p: (p['price'] or 0))
+    elif sort == 'price_high':
+        all_products = sorted(all_products, key=lambda p: (p['price'] or 0), reverse=True)
+    elif sort == 'name_az':
+        all_products = sorted(all_products, key=lambda p: (p['name'] or '').lower())
+    
+    conn.close()
+    
+    # Pagination
+    total_products = len(all_products)
+    total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+    start_idx = (page - 1) * PRODUCTS_PER_PAGE
+    end_idx = start_idx + PRODUCTS_PER_PAGE
+    products = all_products[start_idx:end_idx]
+    
+    # Mark first 4 as "new"
+    new_product_ids = {p['id'] for p in all_products[:4]}
+    
+    # Category display names
+    category_titles = {
+        'gutcare': '🌿 Gut Care & Wellness Products',
+        'corporate': '🏢 Corporate Gifting & Bulk Orders',
+        'gifts': '🎁 Gift Hampers & Special Collections'
+    }
+    
+    return render_template('index.html',
+                         products=products,
+                         new_product_ids=new_product_ids,
+                         title=category_titles.get(category_lower, category),
+                         is_homepage=False,
+                         current_page=page,
+                         total_pages=total_pages,
+                         total_products=total_products,
+                         review_stats_map={},
                          sort=sort)
+
 @app.get('/customer-care/shipping')
 def customer_shipping():
     return render_template('customer_shipping.html')
@@ -723,6 +936,301 @@ def customer_shipping():
 @app.get('/customer-care/returns')
 def customer_returns():
     return render_template('customer_returns.html')
+
+# ==========================
+# COMMUNITY ROUTES
+# ==========================
+
+@app.route('/community')
+def community_home():
+    """View all community posts with pagination and categories"""
+    if not session.get('user_logged_in') and not session.get('admin_logged_in'):
+        flash('Please log in to access the community', 'info')
+        return redirect(url_for('user_login'))
+    
+    page = request.args.get('page', 1, type=int)
+    category_filter = request.args.get('category', 'All')
+    if page < 1:
+        page = 1
+    
+    POSTS_PER_PAGE = 10
+    
+    conn = get_db()
+    
+    # Build query
+    where_clause = ''
+    params = []
+    if category_filter and category_filter != 'All':
+        where_clause = 'WHERE category = ?'
+        params.append(category_filter)
+    
+    # Get total count
+    count_query = f'SELECT COUNT(*) as c FROM community_posts {where_clause}'
+    total_posts = conn.execute(count_query, params).fetchone()['c']
+    
+    # Get paginated posts
+    offset = (page - 1) * POSTS_PER_PAGE
+    query = f'''
+        SELECT cp.*, u.full_name as author_name 
+        FROM community_posts cp
+        JOIN users u ON cp.user_id = u.id
+        {where_clause}
+        ORDER BY cp.is_featured DESC, cp.created_at DESC
+        LIMIT ? OFFSET ?
+    '''
+    params.extend([POSTS_PER_PAGE, offset])
+    
+    posts = conn.execute(query, params).fetchall()
+    
+    # Get all categories for filter
+    categories_result = conn.execute(
+        'SELECT DISTINCT category FROM community_posts ORDER BY category'
+    ).fetchall()
+    categories = ['All'] + [c['category'] for c in categories_result]
+    
+    conn.close()
+    
+    total_pages = (total_posts + POSTS_PER_PAGE - 1) // POSTS_PER_PAGE
+    
+    return render_template('community_home.html',
+                         posts=posts,
+                         categories=categories,
+                         current_category=category_filter,
+                         current_page=page,
+                         total_pages=total_pages,
+                         total_posts=total_posts)
+
+@app.route('/community/post/<int:post_id>')
+def community_post(post_id):
+    """View single community post with comments"""
+    if not session.get('user_logged_in') and not session.get('admin_logged_in'):
+        flash('Please log in to access the community', 'info')
+        return redirect(url_for('user_login'))
+    
+    conn = get_db()
+    
+    # Get post
+    post = conn.execute('''
+        SELECT cp.*, u.full_name as author_name, u.id as author_id
+        FROM community_posts cp
+        JOIN users u ON cp.user_id = u.id
+        WHERE cp.id = ?
+    ''', (post_id,)).fetchone()
+    
+    if not post:
+        flash('Post not found', 'error')
+        conn.close()
+        return redirect(url_for('community_home'))
+    
+    # Get comments with user info
+    comments = conn.execute('''
+        SELECT cc.*, u.full_name as author_name
+        FROM community_comments cc
+        JOIN users u ON cc.user_id = u.id
+        WHERE cc.post_id = ?
+        ORDER BY cc.created_at DESC
+    ''', (post_id,)).fetchall()
+    
+    # Check if current user liked the post
+    user_id = session.get('user_id')
+    user_liked_post = False
+    if user_id:
+        liked = conn.execute(
+            'SELECT 1 FROM community_likes WHERE post_id = ? AND user_id = ?',
+            (post_id, user_id)
+        ).fetchone()
+        user_liked_post = liked is not None
+    
+    conn.close()
+    
+    return render_template('community_post.html',
+                         post=post,
+                         comments=comments,
+                         user_liked_post=user_liked_post)
+
+@app.route('/community/post/new', methods=['GET', 'POST'])
+def create_community_post():
+    """Create new community post"""
+    if not session.get('user_logged_in') and not session.get('admin_logged_in'):
+        flash('Please log in to create a post', 'info')
+        return redirect(url_for('user_login'))
+    
+    if request.method == 'POST':
+        title = (request.form.get('title') or '').strip()
+        body = (request.form.get('body') or '').strip()
+        category = (request.form.get('category') or 'General').strip()
+        
+        if not title or not body:
+            flash('Title and body are required', 'error')
+            return render_template('community_post_form.html')
+        
+        if len(title) > 200:
+            flash('Title must be less than 200 characters', 'error')
+            return render_template('community_post_form.html', title=title, body=body, category=category)
+        
+        conn = get_db()
+        user_id = session.get('user_id')
+        
+        try:
+            conn.execute('''
+                INSERT INTO community_posts (user_id, title, body, category, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (user_id, title, body, category, datetime.now().isoformat(), datetime.now().isoformat()))
+            conn.commit()
+            
+            post_id = conn.execute('SELECT last_insert_rowid() as id').fetchone()['id']
+            conn.close()
+            
+            flash('Post created successfully!', 'success')
+            return redirect(url_for('community_post', post_id=post_id))
+        except Exception as e:
+            conn.close()
+            flash(f'Error creating post: {str(e)}', 'error')
+            return render_template('community_post_form.html', title=title, body=body, category=category)
+    
+    return render_template('community_post_form.html')
+
+@app.route('/community/post/<int:post_id>/comment', methods=['POST'])
+def add_community_comment(post_id):
+    """Add comment to community post"""
+    if not session.get('user_logged_in') and not session.get('admin_logged_in'):
+        flash('Please log in to comment', 'info')
+        return redirect(url_for('user_login'))
+    
+    body = (request.form.get('body') or '').strip()
+    
+    if not body:
+        flash('Comment cannot be empty', 'error')
+        return redirect(url_for('community_post', post_id=post_id))
+    
+    if len(body) > 1000:
+        flash('Comment must be less than 1000 characters', 'error')
+        return redirect(url_for('community_post', post_id=post_id))
+    
+    conn = get_db()
+    user_id = session.get('user_id')
+    
+    try:
+        # Insert comment
+        conn.execute('''
+            INSERT INTO community_comments (post_id, user_id, body, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (post_id, user_id, body, datetime.now().isoformat(), datetime.now().isoformat()))
+        
+        # Update post comment count
+        conn.execute('''
+            UPDATE community_posts 
+            SET comments_count = (SELECT COUNT(*) FROM community_comments WHERE post_id = ?)
+            WHERE id = ?
+        ''', (post_id, post_id))
+        
+        conn.commit()
+        conn.close()
+        
+        flash('Comment added successfully!', 'success')
+        return redirect(url_for('community_post', post_id=post_id))
+    except Exception as e:
+        conn.close()
+        flash(f'Error adding comment: {str(e)}', 'error')
+        return redirect(url_for('community_post', post_id=post_id))
+
+@app.route('/community/post/<int:post_id>/like', methods=['POST'])
+def like_community_post(post_id):
+    """Like/unlike a community post"""
+    if not session.get('user_logged_in') and not session.get('admin_logged_in'):
+        return {'success': False, 'message': 'Please log in'}, 401
+    
+    user_id = session.get('user_id')
+    conn = get_db()
+    
+    # Check if already liked
+    liked = conn.execute(
+        'SELECT id FROM community_likes WHERE post_id = ? AND user_id = ?',
+        (post_id, user_id)
+    ).fetchone()
+    
+    try:
+        if liked:
+            # Unlike
+            conn.execute('DELETE FROM community_likes WHERE post_id = ? AND user_id = ?', 
+                        (post_id, user_id))
+            liked_count_change = -1
+        else:
+            # Like
+            conn.execute('''
+                INSERT INTO community_likes (post_id, user_id, created_at)
+                VALUES (?, ?, ?)
+            ''', (post_id, user_id, datetime.now().isoformat()))
+            liked_count_change = 1
+        
+        # Update post likes count
+        conn.execute('''
+            UPDATE community_posts 
+            SET likes_count = (SELECT COUNT(*) FROM community_likes WHERE post_id = ?)
+            WHERE id = ?
+        ''', (post_id, post_id))
+        
+        conn.commit()
+        
+        # Get updated count
+        new_count = conn.execute(
+            'SELECT likes_count FROM community_posts WHERE id = ?',
+            (post_id,)
+        ).fetchone()['likes_count']
+        
+        conn.close()
+        return {'success': True, 'liked': not liked, 'likes_count': new_count}
+    except Exception as e:
+        conn.close()
+        return {'success': False, 'message': str(e)}, 500
+
+@app.route('/community/comment/<int:comment_id>/like', methods=['POST'])
+def like_community_comment(comment_id):
+    """Like/unlike a community comment"""
+    if not session.get('user_logged_in') and not session.get('admin_logged_in'):
+        return {'success': False, 'message': 'Please log in'}, 401
+    
+    user_id = session.get('user_id')
+    conn = get_db()
+    
+    # Check if already liked
+    liked = conn.execute(
+        'SELECT id FROM community_likes WHERE comment_id = ? AND user_id = ?',
+        (comment_id, user_id)
+    ).fetchone()
+    
+    try:
+        if liked:
+            # Unlike
+            conn.execute('DELETE FROM community_likes WHERE comment_id = ? AND user_id = ?',
+                        (comment_id, user_id))
+        else:
+            # Like
+            conn.execute('''
+                INSERT INTO community_likes (comment_id, user_id, created_at)
+                VALUES (?, ?, ?)
+            ''', (comment_id, user_id, datetime.now().isoformat()))
+        
+        # Update comment likes count
+        conn.execute('''
+            UPDATE community_comments
+            SET likes_count = (SELECT COUNT(*) FROM community_likes WHERE comment_id = ?)
+            WHERE id = ?
+        ''', (comment_id, comment_id))
+        
+        conn.commit()
+        
+        # Get updated count
+        new_count = conn.execute(
+            'SELECT likes_count FROM community_comments WHERE id = ?',
+            (comment_id,)
+        ).fetchone()['likes_count']
+        
+        conn.close()
+        return {'success': True, 'liked': not liked, 'likes_count': new_count}
+    except Exception as e:
+        conn.close()
+        return {'success': False, 'message': str(e)}, 500
 
 @app.route('/customer-care/contact', methods=['GET', 'POST'])
 def customer_contact():
@@ -768,16 +1276,17 @@ def search():
     
     PRODUCTS_PER_PAGE = 12
     
-    # User searched for products with a non-empty query
+    # User searched for products with a non-empty query - EXCLUDE special categories
     like = f"%{q}%"
     if region_id == 'all':
-        # "All Regions" selected + Search term: Show all matching products
-        all_products = conn.execute('SELECT * FROM products WHERE name LIKE ? OR description LIKE ? ORDER BY id DESC', (like, like)).fetchall()
+        # "All Regions" selected + Search term: Show all matching products from Products category only
+        all_products = conn.execute('SELECT * FROM products WHERE (name LIKE ? OR description LIKE ?) AND category = "Products" ORDER BY id DESC', (like, like)).fetchall()
     elif region_id:
-        # Specific region selected + Search term: Show matching products from that region only
+        # Specific region selected + Search term: Show matching products from Products category only
         all_products = conn.execute('''
             SELECT p.* FROM products p
-            WHERE (p.name LIKE ? OR p.description LIKE ?)
+            WHERE p.category = "Products"
+              AND (p.name LIKE ? OR p.description LIKE ?)
               AND (
                    NOT EXISTS (SELECT 1 FROM product_regions pr WHERE pr.product_id = p.id)
                 OR EXISTS (SELECT 1 FROM product_regions pr WHERE pr.product_id = p.id AND pr.region_id = ?)
@@ -785,11 +1294,11 @@ def search():
             ORDER BY p.id DESC
         ''', (like, like, region_id)).fetchall()
     else:
-        # No region selected + Search term: Show all matching products
-        all_products = conn.execute('SELECT * FROM products WHERE name LIKE ? OR description LIKE ? ORDER BY id DESC', (like, like)).fetchall()
+        # No region selected + Search term: Show all matching products from Products category only
+        all_products = conn.execute('SELECT * FROM products WHERE (name LIKE ? OR description LIKE ?) AND category = "Products" ORDER BY id DESC', (like, like)).fetchall()
     
-    # Filter by product status if selected
-    if product_status:
+    # Filter by product status if selected (but not if 'all' is selected)
+    if product_status and product_status != 'all':
         all_products = [p for p in all_products if p['product_status'] == product_status]
     
     # Sorting for search results
@@ -894,7 +1403,11 @@ def set_region():
 def set_product_status():
     ps = request.form.get('product_status')
     try:
-        if ps and ps in VALID_PRODUCT_STATUSES:
+        if ps == 'all':
+            # "All Status" selected - store as string to indicate all statuses
+            session['product_status'] = 'all'
+            flash('Showing all statuses', 'success')
+        elif ps and ps in VALID_PRODUCT_STATUSES:
             session['product_status'] = ps
             flash(f'Filtered by: {ps}', 'success')
         else:
@@ -1417,21 +1930,82 @@ def is_admin():
     return session.get('admin_logged_in') is True
 
 
+@app.route('/admin/diagnose')
+def admin_diagnose():
+    """Diagnostic endpoint to check admin user status (debugging only)"""
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    
+    # Check if admin_users table exists
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'")
+    table_exists = cur.fetchone() is not None
+    
+    # Get admin users
+    admin_users = []
+    if table_exists:
+        cur.execute('SELECT id, username FROM admin_users')
+        admin_users = [dict(row) for row in cur.fetchall()]
+    
+    conn.close()
+    
+    env_password = os.environ.get('ADMIN_DEFAULT_PASSWORD', 'NOT SET')
+    
+    return {
+        'admin_users_table_exists': table_exists,
+        'admin_users': admin_users,
+        'admin_default_password_set': env_password != 'NOT SET',
+        'env_password_value': env_password,
+        'db_path': DB_PATH,
+        'db_exists': os.path.exists(DB_PATH)
+    }
+
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        print(f"\n[DEBUG LOGIN] Attempting login with username: '{username}'")
+        
         conn = get_db()
         admin = conn.execute('SELECT * FROM admin_users WHERE username=?', (username,)).fetchone()
         conn.close()
-        if admin and check_password_hash(admin['password_hash'], password):
-            session.permanent = True  # Make session permanent
-            session['admin_logged_in'] = True
-            session['admin_username'] = username  # Store username in session
-            flash('Welcome, admin!', 'success')
-            return redirect(url_for('admin_dashboard'))
+        
+        # Debug: Check if admin exists
+        if not admin:
+            print(f"[DEBUG LOGIN] ❌ Admin user '{username}' not found in database")
+            flash('Invalid credentials', 'error')
+            return render_template('admin_login.html')
+        
+        print(f"[DEBUG LOGIN] ✅ Admin user '{username}' found in database")
+        
+        # Check password hash
+        if not admin['password_hash']:
+            print(f"[DEBUG LOGIN] ❌ Admin user '{username}' has empty password_hash")
+            flash('Invalid credentials', 'error')
+            return render_template('admin_login.html')
+        
+        # Try to verify password hash
+        try:
+            if check_password_hash(admin['password_hash'], password):
+                print(f"[DEBUG LOGIN] ✅ Password verification successful for '{username}'")
+                session.permanent = True
+                session['admin_logged_in'] = True
+                session['admin_username'] = username
+                flash('Welcome, admin!', 'success')
+                return redirect(url_for('admin_dashboard'))
+            else:
+                print(f"[DEBUG LOGIN] ❌ Password verification failed for '{username}'")
+                print(f"[DEBUG LOGIN]    Password entered: '{password}'")
+                print(f"[DEBUG LOGIN]    Hash in DB: {admin['password_hash'][:40]}...")
+        except Exception as e:
+            print(f"[DEBUG LOGIN] ❌ Error during password verification: {e}")
+        
         flash('Invalid credentials', 'error')
+        return render_template('admin_login.html')
+    
     return render_template('admin_login.html')
 
 
@@ -1472,6 +2046,7 @@ def admin_products():
     # Get filter parameters from request
     search_query = request.args.get('search', '').strip()
     selected_region = request.args.get('region', '')
+    selected_category = request.args.get('category', '')
     
     # Build query based on filters
     query = 'SELECT DISTINCT p.* FROM products p'
@@ -1483,6 +2058,11 @@ def admin_products():
         query += ' LEFT JOIN product_regions pr ON p.id = pr.product_id'
         where_clauses.append('(pr.region_id = ? OR pr.region_id IS NULL)')
         params.append(selected_region)
+    
+    # Add category filter if selected
+    if selected_category:
+        where_clauses.append('p.category = ?')
+        params.append(selected_category)
     
     # Add search filter if provided
     if search_query:
@@ -1512,11 +2092,16 @@ def admin_products():
     
     conn.close()
     
+    # Available categories
+    categories = ['Products', 'Gut Care', 'Corporate', 'Gifts']
+    
     return render_template('admin_products.html', 
                          products=products_with_regions, 
                          regions=regions,
+                         categories=categories,
                          search_query=search_query,
-                         selected_region=selected_region)
+                         selected_region=selected_region,
+                         selected_category=selected_category)
 
 
 @app.route('/admin/product/new', methods=['GET', 'POST'])
@@ -1528,11 +2113,13 @@ def admin_product_new():
         description = request.form.get('description', '').strip()
         price_str = request.form.get('price', '').strip()
         mrp_str = request.form.get('mrp', '').strip()
+        size = request.form.get('size', 'Standard').strip()
         stock = int(request.form.get('stock', '0'))
         est_days = request.form.get('estimated_delivery_days')
         est_date = request.form.get('estimated_delivery_date')
         is_homepage = 1 if request.form.get('is_homepage') else 0
         product_status = request.form.get('product_status', 'Final Product')
+        category = request.form.get('category', 'Products').strip()
         selected_regions = request.form.getlist('regions')
         
         # If no regions selected, default to 'all' (meaning all regions)
@@ -1590,8 +2177,8 @@ def admin_product_new():
         # Create the product first to get its ID
         conn = get_db()
         cursor = conn.execute(
-            'INSERT INTO products (name, description, price, mrp, stock, estimated_delivery_days, estimated_delivery_date, is_homepage, product_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (name, description, price, mrp if mrp is not None else None, stock, est_days if est_days else None, est_date if est_date else None, is_homepage, product_status)
+            'INSERT INTO products (name, description, price, mrp, size, stock, estimated_delivery_days, estimated_delivery_date, is_homepage, product_status, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (name, description, price, mrp if mrp is not None else None, size, stock, est_days if est_days else None, est_date if est_date else None, is_homepage, product_status, category)
         )
         conn.commit()
         product_id = cursor.lastrowid
@@ -1646,11 +2233,13 @@ def admin_product_edit(pid):
                 mrp_val = float(mrp_str)
         except Exception:
             mrp_val = None
+        size = request.form.get('size', 'Standard').strip()
         stock = int(request.form.get('stock', '0'))
         est_days = request.form.get('estimated_delivery_days')
         est_date = request.form.get('estimated_delivery_date')
         is_homepage = 1 if request.form.get('is_homepage') else 0
         product_status = request.form.get('product_status', 'Final Product')
+        category = request.form.get('category', 'Products').strip()
         
         # Handle image upload (replace previous image if new one provided)
         image_path = product['image_path']
@@ -1658,8 +2247,8 @@ def admin_product_edit(pid):
         if uploaded and uploaded.filename != '':
             image_path = replace_product_image(pid, image_path, uploaded)
 
-        conn.execute('UPDATE products SET name=?, description=?, price=?, mrp=?, stock=?, estimated_delivery_days=?, estimated_delivery_date=?, image_path=?, is_homepage=?, product_status=? WHERE id=?',
-                     (name, description, price, mrp_val, stock, est_days if est_days else None, est_date if est_date else None, image_path, is_homepage, product_status, pid))
+        conn.execute('UPDATE products SET name=?, description=?, price=?, mrp=?, size=?, stock=?, estimated_delivery_days=?, estimated_delivery_date=?, image_path=?, is_homepage=?, product_status=?, category=? WHERE id=?',
+                     (name, description, price, mrp_val, size, stock, est_days if est_days else None, est_date if est_date else None, image_path, is_homepage, product_status, category, pid))
         conn.commit()
         # Update regions mapping
         selected_regions = request.form.getlist('regions')
@@ -1733,11 +2322,11 @@ def admin_catalog_images_upload():
     if not is_admin():
         return redirect(url_for('admin_login'))
     
-    region = request.form.get('region')  # 'left' or 'right'
+    region = request.form.get('region')  # 'left', 'right', or 'hero'
     alt_text = request.form.get('alt_text', 'Catalog Image')
     file = request.files.get('image')
     
-    if not region or region not in ['left', 'right']:
+    if not region or region not in ['left', 'right', 'hero']:
         flash('Invalid region selected', 'error')
         return redirect(url_for('admin_catalog_images'))
     
@@ -1792,7 +2381,7 @@ def admin_catalog_images_delete(region, position):
     if not is_admin():
         return redirect(url_for('admin_login'))
     
-    if region not in ['left', 'right']:
+    if region not in ['left', 'right', 'hero']:
         flash('Invalid region', 'error')
         return redirect(url_for('admin_catalog_images'))
     

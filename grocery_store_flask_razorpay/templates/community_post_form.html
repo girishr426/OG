@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="community-form-container" style="max-width: 700px; margin: 2rem auto; padding: 0 1rem;">
+  <h2 style="margin-bottom: 2rem;">✍️ Create a New Post</h2>
+  
+  <form method="post" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div>
+      <label for="title" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+        Post Title <span style="color: #c62828;">*</span>
+      </label>
+      <input 
+        type="text" 
+        id="title" 
+        name="title" 
+        placeholder="What would you like to discuss?" 
+        value="{{ title or '' }}"
+        maxlength="200"
+        required
+        style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; font-family: inherit;">
+      <small style="color: #999; display: block; margin-top: 0.3rem;">Maximum 200 characters</small>
+    </div>
+
+    <div>
+      <label for="category" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+        Category <span style="color: #c62828;">*</span>
+      </label>
+      <select 
+        id="category" 
+        name="category"
+        required
+        style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; font-family: inherit;">
+        <option value="General" {% if category == 'General' %}selected{% endif %}>💬 General Discussion</option>
+        <option value="Tips & Tricks" {% if category == 'Tips & Tricks' %}selected{% endif %}>💡 Tips & Tricks</option>
+        <option value="Product Reviews" {% if category == 'Product Reviews' %}selected{% endif %}>⭐ Product Reviews</option>
+        <option value="Health & Wellness" {% if category == 'Health & Wellness' %}selected{% endif %}>🌿 Health & Wellness</option>
+        <option value="Recipes & Cooking" {% if category == 'Recipes & Cooking' %}selected{% endif %}>🍳 Recipes & Cooking</option>
+        <option value="Questions & Help" {% if category == 'Questions & Help' %}selected{% endif %}>❓ Questions & Help</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="body" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+        Post Content <span style="color: #c62828;">*</span>
+      </label>
+      <textarea 
+        id="body" 
+        name="body" 
+        placeholder="Share your thoughts, experiences, or questions..." 
+        required
+        style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; font-family: inherit; min-height: 250px; resize: vertical;">{{ body or '' }}</textarea>
+      <small style="color: #999; display: block; margin-top: 0.3rem;">Share details, experiences, or ask questions</small>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+      <a href="{{ url_for('community_home') }}" class="btn" style="padding: 0.8rem 1.5rem; border: 1px solid #ddd; background: white; text-decoration: none; border-radius: 6px; font-weight: 600; color: #333; cursor: pointer;">
+        Cancel
+      </a>
+      <button type="submit" class="btn" style="padding: 0.8rem 1.5rem; background: #4caf50; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+        📤 Post
+      </button>
+    </div>
+  </form>
+
+  <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee; color: #666; font-size: 0.9rem;">
+    <p><strong>Community Guidelines:</strong></p>
+    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+      <li>Be respectful and courteous to other members</li>
+      <li>Share authentic experiences and genuine questions</li>
+      <li>No spam or promotional content</li>
+      <li>Keep discussions relevant to health, wellness, and products</li>
+      <li>Posts may be moderated for community safety</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

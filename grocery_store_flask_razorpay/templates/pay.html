@@ -17,9 +17,25 @@
     theme: { color: '#1f6feb' },
     handler: function (resp) {
       fetch('{{ url_for('razorpay_callback') }}', {
-        method: 'POST', headers: { 'Content-Type':'application/json' },
+        method: 'POST', 
+        headers: { 'Content-Type':'application/json' },
         body: JSON.stringify(resp)
-      }).then(function(){ window.location = '{{ url_for('order_success', order_id=order.id) }}'; });
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Callback response:', data);
+        window.location = '{{ url_for('order_success', order_id=order.id) }}';
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Payment processed! Redirecting...');
+        window.location = '{{ url_for('order_success', order_id=order.id) }}';
+      });
     }
   };
   const rzp = new Razorpay(options);
