@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamburger Menu Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1f6feb 0%, #0d47a1 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #1f6feb 0%, #0d47a1 100%);
+            padding: 1rem;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .logo {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* ===== HAMBURGER MENU STYLES ===== */
+        .hamburger-toggle {
+            display: none !important;
+            flex-direction: column !important;
+            gap: 5px !important;
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer !important;
+            padding: 0.4rem !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+            flex-shrink: 0 !important;
+            z-index: 1001 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .hamburger-toggle span {
+            width: 24px !important;
+            height: 2.5px !important;
+            background-color: white !important;
+            border-radius: 2px !important;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+            display: block !important;
+        }
+        
+        /* Mobile Menu Styles - Full Screen Overlay */
+        @media (max-width: 768px) {
+            .hamburger-toggle {
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                background: rgba(255,255,255,0.15) !important;
+                border-radius: 4px !important;
+            }
+        }
+        
+        /* Desktop - Hide hamburger */
+        @media (min-width: 769px) {
+            .hamburger-toggle {
+                display: none !important;
+            }
+        }
+        
+        .info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .info h2 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h2>Hamburger Menu Test</h2>
+        <p><strong>Instructions:</strong></p>
+        <ol style="margin-left: 20px;">
+            <li>Open DevTools (F12 or Ctrl+Shift+I)</li>
+            <li>Click the device toggle icon to enable responsive design mode</li>
+            <li>Set viewport to <strong>375px width (Mobile)</strong></li>
+            <li>Look at the top-right of the header - you should see the hamburger button (three white lines)</li>
+            <li>Click the button to toggle the menu</li>
+            <li>Resize to wider than 768px - button should disappear</li>
+        </ol>
+    </div>
+    
+    <div class="header">
+        <div class="logo">🌱 Organic Gut Point</div>
+        <div class="header-right">
+            <button class="hamburger-toggle" id="hamburgerToggle" aria-label="Toggle menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        const hamburger = document.getElementById('hamburgerToggle');
+        if (hamburger) {
+            hamburger.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                console.log('Hamburger clicked! Expanded:', !isExpanded);
+            });
+        }
+    </script>
+</body>
+</html>

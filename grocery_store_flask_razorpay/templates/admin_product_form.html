@@ -29,6 +29,8 @@
     <select name="category" required>
       <option value="Products" {% if product and product.category == 'Products' %}selected{% endif %}>📦 Products</option>
       <option value="gutcare" {% if product and product.category == 'gutcare' or product and product.category == 'Gut Care' %}selected{% endif %}>🌿 Gut Care</option>
+      <option value="seasonal" {% if product and product.category == 'seasonal' or product and product.category == 'Seasonal' %}selected{% endif %}>🍂 Seasonal</option>
+  <option value="gutfeast" {% if product and product.category == 'gutfeast' or product and product.category == 'Gut Feast' %}selected{% endif %}>🍽️ Gut Feast</option>
       <option value="corporate" {% if product and product.category == 'corporate' or product and product.category == 'Corporate' %}selected{% endif %}>🏢 Corporate</option>
       <option value="gifts" {% if product and product.category == 'gifts' or product and product.category == 'Gifts' %}selected{% endif %}>🎁 Gifts</option>
     </select>
