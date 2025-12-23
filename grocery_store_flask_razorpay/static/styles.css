@@ -729,6 +729,11 @@ header nav a:last-child { border: none; }
   .hero-carousel {
     height: 300px;
   }
+  /* Ensure full image is visible on smaller screens */
+  .carousel-image {
+    object-fit: contain;
+    background-color: #fff; /* avoids dark letterbox behind transparent areas */
+  }
   
   .hero-title {
     font-size: 2rem;
@@ -753,6 +758,10 @@ header nav a:last-child { border: none; }
   .hero-carousel {
     height: 250px;
   }
+  /* Keep full image fitting within smaller hero height */
+  .carousel-image {
+    object-fit: contain;
+  }
   
   .hero-message-overlay {
     padding: 1rem;
@@ -776,6 +785,15 @@ header nav a:last-child { border: none; }
     height: 35px;
     font-size: 1.2rem;
     padding: 0.3rem 0.6rem;
+  }
+}
+
+/* Desktop: avoid zoom/cropping in hero by fitting the whole image */
+@media (min-width: 769px) {
+  .carousel-image {
+    object-fit: contain;
+    object-position: center center;
+    background-color: #fff; /* prevents dark letterboxing if image has transparent edges */
   }
 }
 
@@ -2427,6 +2445,422 @@ legend {
     min-height: 28px !important;
   }
 }
+
+/* ===== HAMBURGER MENU STYLES ===== */
+.hamburger-toggle {
+  display: none;
+  position: relative;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.hamburger-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hamburger-line {
+  position: absolute;
+  width: 24px;
+  height: 3px;
+  background-color: white;
+  border-radius: 2px;
+  left: 13px;
+  transition: all 0.3s ease;
+  /* Default transform origin; overridden in open state for arrow */
+  transform-origin: center;
+}
+
+.hamburger-line:nth-child(1) {
+  top: 12px;
+}
+
+.hamburger-line:nth-child(2) {
+  top: 23px;
+}
+
+.hamburger-line:nth-child(3) {
+  top: 34px;
+}
+
+/* Desktop - Hide hamburger */
+@media (min-width: 769px) {
+  .hamburger-toggle {
+    display: none !important;
+  }
+}
+
+/* Mobile - Show hamburger */
+@media (max-width: 768px) {
+  .hamburger-toggle {
+    display: block !important;
+    margin: 0 8px 0 0;
+  }
+  
+  /* Fallback: draw all 3 lines using a single pseudo-element to avoid any nth-child issues */
+  .hamburger-toggle::before {
+    content: "";
+    position: absolute;
+    left: 13px;
+    width: 24px;
+    height: 3px;
+    background-color: white;
+    border-radius: 2px;
+    top: 12px; /* first line */
+    /* draw the other two lines as box-shadows to guarantee visibility */
+    box-shadow: 0 11px 0 0 white, 0 22px 0 0 white;
+    transition: opacity 0.2s ease;
+    opacity: 1;
+  }
+  
+  /* When menu is opened, hide the fallback pseudo-lines and use animated spans (X) */
+  .hamburger-toggle[aria-expanded="true"]::before {
+    opacity: 0;
+  }
+  
+  /* Keep span lines hidden by default on mobile to avoid double-rendering with ::before */
+  .hamburger-toggle .hamburger-line {
+    opacity: 0;
+  }
+  
+  /* Default state - three horizontal lines */
+  .hamburger-toggle[aria-expanded="false"] .hamburger-line:nth-child(1),
+  .hamburger-toggle[aria-expanded="false"] .hamburger-line:nth-child(2),
+  .hamburger-toggle[aria-expanded="false"] .hamburger-line:nth-child(3) {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0; /* keep spans hidden; ::before renders the 3 lines */
+  }
+  
+  /* Open state - render a clear back chevron '<' using ::after */
+  .hamburger-toggle[aria-expanded="true"] .hamburger-line {
+    opacity: 0 !important;     /* hide spans entirely on open */
+    transform: none !important;
+  }
+
+  .hamburger-toggle[aria-expanded="true"]::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 16px;               /* adjust to taste */
+    height: 16px;              /* adjust to taste */
+    border-top: 3px solid #fff;
+    border-left: 3px solid #fff;
+    transform: translateY(-50%) rotate(-45deg);
+    border-radius: 1px;
+    opacity: 1;
+  }
+
+  /* Provide a bit of space to the right of the back arrow when open */
+  .hamburger-toggle[aria-expanded="true"] {
+    margin-right: 12px;
+  }
+}
+
+/* Mobile Menu Styles - Full Screen Overlay */
+@media (max-width: 768px) {
+  /* Snackparty-like: keep header user badge hidden on mobile; account lives in the drawer */
+  /* Removed: .header-user-section was hidden on mobile and removed from HTML */
+
+  /* Truncate long names to fit */
+  .header-user-section > div {
+    max-width: 110px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Compact logout button */
+  .header-user-section a {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+  
+  .header-nav-primary {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    background: linear-gradient(135deg, #1f6feb 0%, #0d47a1 100%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;                      /* no extra vertical spacing between items */
+    padding: 80px 0 0 0 !important;
+    margin: 0 !important;
+    z-index: 999 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    overflow-y: auto !important;
+    /* Prevent platform auto-scaling from changing nav item sizes */
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+  
+  .header-nav-primary.mobile-menu-open {
+    transform: translateX(0) !important;
+  }
+  
+  .header-nav-primary a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 0 !important;                      /* no extra spacing between emoji and text */
+    padding: 0 14px !important;             /* slightly tighter horizontal padding */
+    min-height: 44px !important;            /* compact touch target */
+    height: 44px !important;                /* enforce consistent compact height */
+    line-height: 44px !important;           /* text/emoji vertically centered in box */
+    font-size: 15px !important;             /* slightly smaller text for compact layout */
+    width: 100% !important;                  /* stretch full width */
+    box-sizing: border-box !important;       /* include padding in width */
+    text-align: left !important;
+    color: white !important;
+    text-decoration: none !important;
+    transition: background-color 0.2s ease !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    margin: 0 !important;                   /* remove any default margins */
+  }
+
+  /* Explicit override for nav-item class anchors inside mobile drawer */
+  .header-nav-primary .nav-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 0 !important;                      /* no extra spacing between emoji and text */
+    width: 100% !important;
+    min-width: 100% !important;            /* ensure full-width even with global min-width */
+    box-sizing: border-box !important;
+    min-height: 44px !important;
+    height: 44px !important;               /* enforce consistent compact height */
+    padding: 0 14px !important;            /* slightly tighter horizontal padding */
+    margin: 0 !important;                  /* remove any default margins */
+    line-height: 44px !important;          /* text/emoji vertically centered in box */
+    /* Prevent vertical growth to fill screen */
+    flex: 0 0 auto !important;
+    align-self: auto !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  .header-nav-primary a:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .header-nav-primary a.active {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    font-weight: 600 !important;
+  }
+  
+  .header-nav-primary a[style*="color: #d32f2f"] {
+    color: #ff6b6b !important;
+    margin-top: 10px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  /* Mobile-only / Desktop-only helpers */
+  .mobile-only { display: block !important; }
+  .desktop-only { display: none !important; }
+
+  /* Show user menu icon on mobile as well */
+  .user-menu { display: block !important; }
+
+  /* Mobile: anchor popover under the icon (not a bottom sheet) */
+  .user-popover {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    min-width: 180px !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important;
+    padding: 10px !important;
+    opacity: 0 !important;
+    transform: translateY(-4px) !important;
+    pointer-events: none !important;
+    transition: opacity 0.16s ease, transform 0.16s ease !important;
+    z-index: 1003 !important;
+  }
+
+  /* Visibility classes controlled by JS */
+  .user-popover.visible {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+  }
+  .user-popover.hidden {
+    opacity: 0 !important;
+    transform: translateY(-4px) !important;
+    pointer-events: none !important;
+  }
+
+  /* Remove arrow on mobile */
+  .user-popover::before {
+    display: none !important;
+  }
+
+  /* Style mobile popover header */
+  .user-popover .user-popover-header {
+    padding: 16px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    font-size: 16px !important;
+  }
+
+  /* Style mobile popover links */
+  .user-popover a {
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+  }
+
+  /* Account block at top of drawer */
+  .nav-account-block {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;                  /* stretch full width */
+    box-sizing: border-box !important;       /* include padding in width */
+    padding: 10px 14px !important;           /* compact account block padding */
+    min-height: 44px !important;             /* match compact nav items */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+    gap: 12px !important;
+  }
+  .nav-account-block .nav-user {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+  }
+  .nav-account-block .nav-logout {
+    background: rgba(255,255,255,0.15) !important;
+    color: #fff !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* Desktop - Show full navigation */
+@media (min-width: 769px) {
+  .hamburger-toggle {
+    display: none !important;
+  }
+  
+  /* Header user section removed; user info now only in hover popover (desktop) and drawer (mobile) */
+
+  /* Mobile-only / Desktop-only helpers */
+  .mobile-only { display: none !important; }
+  .desktop-only { display: block !important; }
+}
+
+
+
+
+
+/* ===== USER MENU (DESKTOP HOVER POPOVER) ===== */
+.icon-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  margin: 0 2px !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  font-size: 18px !important; /* emoji size */
+}
+
+.icon-button:hover {
+  background: rgba(255, 255, 255, 0.28) !important;
+}
+
+/* user-icon-button inherits sizing from .icon-button */
+
+/* .cart-icon-button inherits from .icon-button */
+
+.user-menu {
+  position: relative;
+}
+
+/* Desktop popover styles - mobile overrides in @media query above */
+.user-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  padding: 10px;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 1002;
+}
+
+.user-popover::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  transform: rotate(45deg);
+  box-shadow: -1px -1px 1px rgba(0,0,0,0.03);
+}
+
+.user-menu:hover .user-popover,
+.user-menu:focus-within .user-popover {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.user-popover .user-popover-header {
+  font-weight: 700;
+  margin: 6px 8px 8px;
+}
+
+.user-popover a {
+  display: block;
+  padding: 8px 10px;
+  color: #111827;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.user-popover a:hover {
+  background: #f3f4f6;
+}
+
+.user-popover a.logout {
+  color: #b91c1c;
+}
+
 
 
 

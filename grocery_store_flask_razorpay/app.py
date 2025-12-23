@@ -830,6 +830,8 @@ def index():
     categories_info = [
         ('Products', '🌾 Organic Products'),
         ('gutcare', '🌿 Gut Care'),
+            ('seasonal', '🌱 Seasonal Products'),
+        ('gutfeast', '🍽️ Gut Feast'),
         ('corporate', '🏢 Corporate'),
         ('gifts', '🎁 Gifts')
     ]
@@ -846,10 +848,15 @@ def index():
     
     # Fetch Gut Care products for carousel (only when viewing newest products on homepage)
     gutcare_carousel_products = []
+    gutfeast_carousel_products = []
     if is_homepage and sort == 'new':
         gutcare_carousel_products = conn.execute(
             'SELECT id, name, price, image_path FROM products WHERE LOWER(category) = ? ORDER BY id DESC LIMIT 12',
             ('gutcare',)
+        ).fetchall()
+        gutfeast_carousel_products = conn.execute(
+            'SELECT id, name, price, image_path FROM products WHERE LOWER(category) = ? ORDER BY id DESC LIMIT 12',
+            ('gutfeast',)
         ).fetchall()
     
     conn.close()
@@ -865,7 +872,8 @@ def index():
                          review_stats_map=review_stats_map,
                          sort=sort,
                          all_categories_products=all_categories_products,
-                         gutcare_carousel_products=gutcare_carousel_products)
+                         gutcare_carousel_products=gutcare_carousel_products,
+                         gutfeast_carousel_products=gutfeast_carousel_products)
 
 @app.route('/category/<category>')
 def category_view(category):
@@ -874,7 +882,7 @@ def category_view(category):
     category_lower = category.lower()
     
     # Validate category
-    valid_categories = ['gutcare', 'corporate', 'gifts']
+    valid_categories = ['gutcare', 'gutfeast', 'seasonal', 'corporate', 'gifts']
     if category_lower not in valid_categories:
         return redirect(url_for('index'))
     
@@ -914,6 +922,8 @@ def category_view(category):
     # Category display names
     category_titles = {
         'gutcare': '🌿 Gut Care & Wellness Products',
+        'gutfeast': '🍽️ Gut Feast Specials',
+        'seasonal': '🍂 Seasonal Collections & Specials',
         'corporate': '🏢 Corporate Gifting & Bulk Orders',
         'gifts': '🎁 Gift Hampers & Special Collections'
     }
@@ -2059,9 +2069,9 @@ def admin_products():
         where_clauses.append('(pr.region_id = ? OR pr.region_id IS NULL)')
         params.append(selected_region)
     
-    # Add category filter if selected
+    # Add category filter if selected (case-insensitive to support legacy capitalized values)
     if selected_category:
-        where_clauses.append('p.category = ?')
+        where_clauses.append('LOWER(p.category) = LOWER(?)')
         params.append(selected_category)
     
     # Add search filter if provided
@@ -2092,8 +2102,8 @@ def admin_products():
     
     conn.close()
     
-    # Available categories
-    categories = ['Products', 'Gut Care', 'Corporate', 'Gifts']
+    # Available categories (support both legacy capitalized and new lowercase values via LOWER() filter below)
+    categories = ['Products', 'Gut Care', 'Seasonal', 'Gut Feast', 'Corporate', 'Gifts']
     
     return render_template('admin_products.html', 
                          products=products_with_regions, 

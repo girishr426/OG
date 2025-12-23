@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Navigation Test</title>
+  <link rel="stylesheet" href="static/styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f3f4f6;
+    }
+    .test-wrapper {
+      max-width: 1200px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .resolution-test {
+      margin: 30px 0;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .resolution-test h3 {
+      margin-top: 0;
+      color: #1f2937;
+      background: #dbeafe;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .nav-test-frame {
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #1f2937;
+      margin: 10px 0;
+    }
+    .frame-label {
+      font-size: 12px;
+      color: #6b7280;
+      padding: 8px;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-wrapper">
+    <h1>📱 Mobile Navigation Full-Width Test</h1>
+    <p>Testing if nav items stretch full-width in mobile drawer across different resolutions.</p>
+
+    <!-- 320px Test -->
+    <div class="resolution-test">
+      <h3>iPhone SE (320px)</h3>
+      <div class="nav-test-frame" style="width: 320px;">
+        <div class="frame-label">320px width</div>
+        <nav class="header-nav-primary" style="transform: translateX(0); display: flex; flex-direction: column;">
+          <a href="#" class="nav-item">🏠 Home</a>
+          <a href="#" class="nav-item">💊 Gut Care Products</a>
+          <a href="#" class="nav-item">🏢 Corporate Orders</a>
+          <a href="#" class="nav-item">🎁 Gifts</a>
+        </nav>
+      </div>
+      <p style="margin: 10px 0; font-size: 14px;">Expected: Each nav item should stretch from left edge to right edge (full 320px width)</p>
+    </div>
+
+    <!-- 375px Test -->
+    <div class="resolution-test">
+      <h3>iPhone 12/13 (375px)</h3>
+      <div class="nav-test-frame" style="width: 375px;">
+        <div class="frame-label">375px width</div>
+        <nav class="header-nav-primary" style="transform: translateX(0); display: flex; flex-direction: column;">
+          <a href="#" class="nav-item">🏠 Home</a>
+          <a href="#" class="nav-item">💊 Gut Care Products</a>
+          <a href="#" class="nav-item">🏢 Corporate Orders</a>
+          <a href="#" class="nav-item">🎁 Gifts</a>
+        </nav>
+      </div>
+      <p style="margin: 10px 0; font-size: 14px;">Expected: Each nav item should stretch from left edge to right edge (full 375px width)</p>
+    </div>
+
+    <!-- 768px Test (Edge of mobile) -->
+    <div class="resolution-test">
+      <h3>iPad Mini (768px)</h3>
+      <div class="nav-test-frame" style="width: 768px;">
+        <div class="frame-label">768px width (mobile breakpoint)</div>
+        <nav class="header-nav-primary" style="transform: translateX(0); display: flex; flex-direction: column;">
+          <a href="#" class="nav-item">🏠 Home</a>
+          <a href="#" class="nav-item">💊 Gut Care Products</a>
+          <a href="#" class="nav-item">🏢 Corporate Orders</a>
+          <a href="#" class="nav-item">🎁 Gifts</a>
+        </nav>
+      </div>
+      <p style="margin: 10px 0; font-size: 14px;">Expected: Each nav item should stretch from left edge to right edge (full 768px width)</p>
+    </div>
+
+  </div>
+</body>
+</html>

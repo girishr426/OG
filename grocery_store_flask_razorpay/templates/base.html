@@ -7,7 +7,7 @@
   <meta name="description" content="{{ site_meta.description }}">
   <title>{{ title or site_meta.title }}</title>
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=5.5">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=5.10">
   <link rel="canonical" href="{{ (site_meta.base_url or request.url_root[:-1]) ~ request.path }}">
   <meta property="og:title" content="{{ title or site_meta.title }}">
   <meta property="og:description" content="{{ site_meta.description }}">
@@ -44,42 +44,77 @@
   <header style="overflow: visible;">
     <div class="container" style="position: relative;">
       
-      <!-- ROW 1: Logo (Left) | User Info (Extreme Right) - NO WRAPPING -->
+      <!-- ROW 1: Hamburger (Extreme Left) | Logo (Center) | Cart + User Info (Right) -->
       <div class="header-top-row" style="display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 0.5rem !important; width: 100% !important; margin-bottom: 0.5rem !important; flex-wrap: nowrap !important;">
-        <!-- Logo (Left) - Shrinks but doesn't wrap -->
-        <h1 style="margin: 0 !important; flex-shrink: 1 !important; min-width: 0 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; order: 1 !important;"><a href="{{ url_for('reset_filters') }}">🌱 Organic Gut Point</a></h1>
         
-        <!-- User Badge & Cart & Logout (Extreme Right) - Fixed, never shrinks -->
-        {% if session.get('admin_logged_in') or session.get('user_logged_in') %}
-        <div class="header-user-section" style="display: flex !important; align-items: center !important; gap: 0.6rem !important; flex-shrink: 0 !important; white-space: nowrap !important; order: 2 !important;">
-          <a href="{{ url_for('cart') }}" style="background: rgba(255,255,255,0.2) !important; color: white !important; padding: 0.4rem 0.8rem !important; border-radius: 4px !important; text-decoration: none !important; font-weight: 500 !important; font-size: clamp(0.75rem, 0.9vw, 0.9rem) !important; white-space: nowrap !important; display: inline-block !important; border: none !important; cursor: pointer !important;">🛒 {{ (session.get('cart') or [])|length }}</a>
-          <div style="font-weight: 600 !important; color: white !important; font-size: clamp(0.8rem, 1vw, 0.95rem) !important; white-space: nowrap !important;">👤 {{ session.get('admin_username') or session.get('user_name') }}</div>
-          <a href="{{ url_for('admin_logout') if session.get('admin_logged_in') else url_for('user_logout') }}" style="background: #f44336 !important; color: white !important; padding: 0.4rem 0.8rem !important; border-radius: 4px !important; text-decoration: none !important; font-weight: 500 !important; font-size: clamp(0.75rem, 0.9vw, 0.9rem) !important; white-space: nowrap !important; display: inline-block !important; border: none !important; cursor: pointer !important;">Logout</a>
+        <!-- Hamburger Menu Button - Extreme Left -->
+        <button class="hamburger-toggle" id="hamburgerToggle" aria-label="Toggle menu" aria-expanded="false">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+        
+        <!-- Logo (Center/Flex-1) -->
+        <h1 style="margin: 0 !important; flex: 1 !important; flex-shrink: 1 !important; min-width: 0 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; order: 1 !important; text-align: center !important;"><a href="{{ url_for('reset_filters') }}">🌱 Organic Gut Point</a></h1>
+        
+        <!-- Right Section: Cart + User Info -->
+        <div style="display: flex !important; align-items: center !important; gap: 0.5rem !important; flex-shrink: 0 !important; order: 2 !important; position: relative !important;">
+          {% if session.get('admin_logged_in') or session.get('user_logged_in') %}
+          <a href="{{ url_for('cart') }}" class="icon-button cart-icon-button" style="text-decoration: none !important;">🛒</a>
+          {% endif %}
+          
+          <!-- User hover/tap menu next to cart (visible on desktop and mobile) -->
+          <div class="user-menu" style="position: relative !important;">
+            <button class="user-icon-button icon-button" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
+              👤
+            </button>
+            <div class="user-popover hidden" role="menu" aria-label="User options">
+              {% if session.get('admin_logged_in') %}
+                <div class="user-popover-header">Admin: {{ session.get('admin_username') }}</div>
+                <a role="menuitem" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+                <a role="menuitem" href="{{ url_for('admin_orders') }}">Orders</a>
+                <a role="menuitem" href="{{ url_for('admin_logout') }}" class="logout">Logout</a>
+              {% elif session.get('user_logged_in') %}
+                <div class="user-popover-header">{{ session.get('user_name') }}</div>
+                <a role="menuitem" href="{{ url_for('user_profile') }}">Profile</a>
+                <a role="menuitem" href="{{ url_for('user_orders') }}">Orders</a>
+                <a role="menuitem" href="{{ url_for('user_logout') }}" class="logout">Logout</a>
+              {% else %}
+                <a role="menuitem" href="{{ url_for('user_login') }}">Login</a>
+                <a role="menuitem" href="{{ url_for('user_register') }}">Register</a>
+              {% endif %}
+            </div>
+          </div>
+          
         </div>
-        {% endif %}
       </div>
 
-      <!-- ROW 2: Navigation - LOCKED SINGLE ROW, NO WRAPPING -->
-      <nav class="header-nav-primary" aria-label="Primary" style="display: flex !important; gap: 0.3rem !important; align-items: center !important; flex-wrap: nowrap !important; width: 100% !important; overflow-x: auto !important; margin-bottom: 0.5rem !important;">
-        <a href="{{ url_for('reset_filters') }}" class="nav-item{% if request.endpoint == 'index' or request.endpoint == 'reset_filters' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Home</a>
-        <a href="{{ url_for('category_view', category='gutcare') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'gutcare' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">🌿 Gut Care</a>
-        <a href="{{ url_for('category_view', category='corporate') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'corporate' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">🏢 Corporate</a>
-        <a href="{{ url_for('category_view', category='gifts') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'gifts' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">🎁 Gifts</a>
-        <a href="{{ url_for('community_home') }}" class="nav-item{% if request.endpoint == 'community_home' or 'community' in request.endpoint %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">💬 Community</a>
+      <!-- ROW 2: Navigation Menu -->
+      <nav class="header-nav-primary" role="navigation" aria-label="Main navigation">
+        {% if session.get('admin_logged_in') or session.get('user_logged_in') %}
+        <div class="nav-account-block mobile-only">
+          <div class="nav-user">
+            <span class="user-emoji" aria-hidden="true">👤</span>
+            <span class="user-name">{{ session.get('admin_username') or session.get('user_name') }}</span>
+          </div>
+        </div>
+        {% endif %}
+  <a href="{{ url_for('reset_filters') }}" class="nav-item{% if request.endpoint == 'index' or request.endpoint == 'reset_filters' %} active{% endif %}">Home</a>
+  <a href="{{ url_for('category_view', category='gutcare') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'gutcare' %} active{% endif %}">🌿 Gut Care</a>
+  <a href="{{ url_for('category_view', category='seasonal') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'seasonal' %} active{% endif %}">🍂 Seasonal</a>
+  <a href="{{ url_for('category_view', category='gutfeast') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'gutfeast' %} active{% endif %}">🍽️ Gut Feast</a>
+  <a href="{{ url_for('category_view', category='corporate') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'corporate' %} active{% endif %}">🏢 Corporate</a>
+  <a href="{{ url_for('category_view', category='gifts') }}" class="nav-item{% if request.endpoint == 'category_view' and request.view_args.get('category') == 'gifts' %} active{% endif %}">🎁 Gifts</a>
+  <a href="{{ url_for('community_home') }}" class="nav-item{% if request.endpoint == 'community_home' or 'community' in request.endpoint %} active{% endif %}">💬 Community</a>
         
         {% if session.get('admin_logged_in') %}
-          <a href="{{ url_for('admin_products') }}" class="nav-item{% if 'admin_product' in request.endpoint %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">📦 Products</a>
-          <a href="{{ url_for('admin_orders') }}" class="nav-item{% if request.endpoint == 'admin_orders' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Orders</a>
-          <a href="{{ url_for('admin_subscribers') }}" class="nav-item{% if request.endpoint == 'admin_subscribers' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Subscribers</a>
-          <a href="{{ url_for('admin_catalog_images') }}" class="nav-item{% if request.endpoint == 'admin_catalog_images' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Catalog</a>
-          <a href="{{ url_for('admin_logout') }}" class="nav-item" style="display: inline-flex !important; flex-shrink: 0 !important; color: #d32f2f;">Logout</a>
+          <a href="{{ url_for('admin_products') }}" class="nav-item{% if 'admin_product' in request.endpoint %} active{% endif %}">📦 Products</a>
+          <a href="{{ url_for('admin_subscribers') }}" class="nav-item{% if request.endpoint == 'admin_subscribers' %} active{% endif %}">Subscribers</a>
+          <a href="{{ url_for('admin_catalog_images') }}" class="nav-item{% if request.endpoint == 'admin_catalog_images' %} active{% endif %}">Catalog</a>
         {% elif session.get('user_logged_in') %}
-          <a href="{{ url_for('user_profile') }}" class="nav-item{% if request.endpoint == 'user_profile' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">👤 Profile</a>
-          <a href="{{ url_for('user_orders') }}" class="nav-item{% if request.endpoint == 'user_orders' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">📦 Orders</a>
-          <a href="{{ url_for('user_logout') }}" class="nav-item" style="display: inline-flex !important; flex-shrink: 0 !important; color: #d32f2f;">Logout</a>
+          {# Remove account links from main nav to avoid duplicates; available via user menu/drawer #}
         {% else %}
-          <a href="{{ url_for('user_login') }}" class="nav-item{% if request.endpoint == 'user_login' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Login</a>
-          <a href="{{ url_for('user_register') }}" class="nav-item{% if request.endpoint == 'user_register' %} active{% endif %}" style="display: inline-flex !important; flex-shrink: 0 !important;">Register</a>
+          {# Remove Login/Register from main nav; available via user menu/drawer #}
         {% endif %}
       </nav>
     </div>
@@ -131,8 +166,7 @@
           </select>
         </form>
 
-        <!-- Clear Filters -->
-        <a href="{{ url_for('reset_filters') }}" class="clear-filters-btn">✕ Clear Filters</a>
+        
       </div>
     </div>
     {% endif %}
@@ -158,6 +192,59 @@
             flashDiv.style.display = 'none';
           }, 300);
         }, 4000);
+      }
+      
+      // ========== HAMBURGER MENU ==========
+      const hamburger = document.getElementById('hamburgerToggle');
+      const navMenu = document.querySelector('.header-nav-primary');
+      
+      if (hamburger && navMenu) {
+        hamburger.addEventListener('click', () => {
+          navMenu.classList.toggle('mobile-menu-open');
+          hamburger.setAttribute('aria-expanded', navMenu.classList.contains('mobile-menu-open'));
+        });
+        
+        // Close menu when a link is clicked
+        navMenu.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            navMenu.classList.remove('mobile-menu-open');
+            hamburger.setAttribute('aria-expanded', 'false');
+          });
+        });
+      }
+
+      // ========== USER MENU ICON (MOBILE + DESKTOP) ==========
+      const userMenuBtn = document.querySelector('.user-icon-button');
+      const userPopover = document.querySelector('.user-popover');
+      
+      if (userMenuBtn && userPopover) {
+        userMenuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isVisible = userPopover.classList.contains('visible');
+          if (isVisible) {
+            userPopover.classList.remove('visible');
+            userPopover.classList.add('hidden');
+          } else {
+            userPopover.classList.remove('hidden');
+            userPopover.classList.add('visible');
+          }
+        });
+
+        // Close popover when a link is clicked
+        userPopover.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            userPopover.classList.remove('visible');
+            userPopover.classList.add('hidden');
+          });
+        });
+
+        // Close popover when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!userMenuBtn.contains(e.target) && !userPopover.contains(e.target)) {
+            userPopover.classList.remove('visible');
+            userPopover.classList.add('hidden');
+          }
+        });
       }
       
     // Enhanced Search & Filters Experience
